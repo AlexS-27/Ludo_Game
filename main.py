@@ -83,7 +83,7 @@ while run:
         #Cliquer : Montre l'id de la case
         if event.type == pygame.MOUSEBUTTONDOWN:
             mx, my = pygame.mouse.get_pos()
-            col = mx // CELL
+            col = my // CELL
             row = mx // ROWS
             print("Case cliqué -> id =", grid[row][col].id)
 
