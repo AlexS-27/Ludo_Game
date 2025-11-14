@@ -21,6 +21,7 @@ WHITE = (255, 255, 255)
 YELLOW = (255, 255, 0)
 BLACK = (0, 0, 0)
 
+# class to create the cells
 class Cell:
     def __init__(self, row, col, size, id):
         self.row = row
@@ -38,7 +39,6 @@ class Cell:
 #create the grill + id
 grid = []
 id_counter = 0
-
 for row in range(ROWS):
     grid.append([])
     for col in range(COLS):
@@ -79,13 +79,20 @@ while run:
         #quit pygame
         if event.type == pygame.QUIT:
             run = False
+        #React to resize
+        if event.type == pygame.VIDEORESIZE:
+            screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
 
         #Cliquer : Montre l'id de la case
         if event.type == pygame.MOUSEBUTTONDOWN:
             mx, my = pygame.mouse.get_pos()
             col = mx // CELL
-            row = mx // ROWS
-            print("Case cliqué -> id =", grid[row][col].id)
+            row = my // CELL
+
+            if 0 <= row < ROWS and 0 <= col < COLS:
+                print("Case cliqué -> id =", grid[row][col].id)
+            else:
+                print("Clique hors grille :", (mx,my), "->", (row,col))
 
     screen.fill((0,0,0))
 
