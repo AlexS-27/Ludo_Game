@@ -11,7 +11,8 @@ pygame.display.set_caption("Ludo Game")
 
 # define game variable
 ROWS, COLS = 15, 15
-CELL = 40
+CELL_WIDTH = 80
+CELL_HEIGHT = 40
 
 #colors
 RED = (255, 0, 0)
@@ -24,22 +25,23 @@ BLACK = (0, 0, 0)
 #Alex
 # class to create the cells
 class Cell:
-    def __init__(self, row, col, size, id):
+    def __init__(self, row, col, width, height, id):
         self.row = row
         self.col = col
-        self.size = size
+        self.width = width
+        self.height = height
         self.id = id
         self.color = WHITE
         self.border_width = 1
 
     def draw(self, surface):
-        x = self.col * self.size
-        y = self.row * self.size
+        x = self.col * self.width
+        y = self.row * self.height
 
-        pygame.draw.rect(surface, self.color, (x, y, self.size, self.size))
+        pygame.draw.rect(surface, self.color, (x, y, self.width, self.height))
 
         if self.border_width > 0:
-            pygame.draw.rect(surface, BLACK, (x , y, self.size, self.size), 1)
+            pygame.draw.rect(surface, BLACK, (x, y, self.width, self.height), 1)
 
 # Avec l'aide de chatGPT -Alex
 def draw_wide_arrow(surface, start_row, start_col, base_width=3, end_row=None, end_col=None, color=RED, cell_size=40, direction="down"):
@@ -88,13 +90,15 @@ def draw_wide_arrow(surface, start_row, start_col, base_width=3, end_row=None, e
     points = [(x1, y1), (x2, y2), (x_end, y_end)]
     pygame.draw.polygon(surface, color, points)
 
-#create the grill + id
+
+#create the grid + id
 grid = []
 id_counter = 0
+
 for row in range(ROWS):
     grid.append([])
     for col in range(COLS):
-        grid[row].append(Cell(row, col, CELL, id_counter))
+        grid[row].append(Cell(row, col, CELL_WIDTH, CELL_HEIGHT, id_counter))
         id_counter += 1
 
 #Alex
@@ -162,6 +166,7 @@ while run:
 
     events = pygame.event.get()
     for event in events:
+
         #quit pygame
         if event.type == pygame.QUIT:
             run = False
@@ -172,8 +177,8 @@ while run:
         #Cliquer : Montre l'id de la case -Alex
         if event.type == pygame.MOUSEBUTTONDOWN:
             mx, my = pygame.mouse.get_pos()
-            col = mx // CELL
-            row = my // CELL
+            col = mx // CELL_WIDTH
+            row = my // CELL_HEIGHT
 
             if 0 <= row < ROWS and 0 <= col < COLS:
                 print("Case cliqué -> id =", grid[row][col].id)
@@ -182,7 +187,7 @@ while run:
 
     screen.fill((0,0,0))
 
-    #dessiner toutes les cases -Alex
+    # draw all cells -Alex
     for row in grid:
         for cell in row:
             cell.draw(screen)
