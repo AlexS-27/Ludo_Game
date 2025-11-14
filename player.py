@@ -1,9 +1,16 @@
 from pawn import Pawn
 
+PLAYER_COLORS = {
+    1: "blue",
+    2: "red",
+    3: "green",
+    4: "yellow"
+}
+
 class Player:
-    def __init__(self, name, color):
+    def __init__(self, name, index):
         self.name = name
-        self.color = color
+        self.color = PLAYER_COLORS[index]
         self.pawns = []
         for i in range(4):
             game_pawn = Pawn(self, i)
