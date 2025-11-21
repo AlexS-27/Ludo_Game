@@ -11,8 +11,8 @@ pygame.display.set_caption("Ludo Game")
 
 # Grid
 ROWS, COLS = 15, 15
-CELL_WIDTH = 80
-CELL_HEIGHT = 40
+CELL_WIDTH = 50
+CELL_HEIGHT = 50
 
 # cell type
 NORMAL_HORIZONTAL = "normal_horizontal"
@@ -159,7 +159,7 @@ for c in range(6, 9):
     game_id_counter += 1
 
 # Chemin vertical bleu
-for r in range(1, 7):
+for r in range(1, 6):
     grid[r][8].cell_type = NORMAL_VERTICAL
     grid[r][8].id = game_id_counter
     game_id_counter += 1
@@ -177,7 +177,7 @@ for r in range(7, 9):
     game_id_counter += 1
 
 # Chemin horizontal jaune
-for c in range(13, 7, -1):
+for c in range(13, 8, -1):
     grid[8][c].cell_type = NORMAL_HORIZONTAL
     grid[8][c].id = game_id_counter
     game_id_counter += 1
@@ -195,7 +195,7 @@ for c in range(8, 5, -1):
     game_id_counter += 1
 
 # Chemin vertical vert
-for r in range(13, 7, -1):
+for r in range(13, 8, -1):
     grid[r][6].cell_type = NORMAL_VERTICAL
     grid[r][6].id = game_id_counter
     game_id_counter += 1
@@ -212,14 +212,14 @@ for r in range(8, 5, -1):
     grid[r][0].id = game_id_counter
     game_id_counter += 1
 
-# Chemin horizontal vert
+# Chemin horizontal rouge
 for c in range(1, 6):
     grid[6][c].cell_type = NORMAL_HORIZONTAL
     grid[6][c].id = game_id_counter
     game_id_counter += 1
 
-# Chemin vertical bleu
-for r in range(6, 0, -1):
+# Chemin vertical rouge
+for r in range(5, 0, -1):
     grid[r][6].cell_type = NORMAL_VERTICAL
     grid[r][6].id = game_id_counter
     game_id_counter += 1
