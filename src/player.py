@@ -1,4 +1,4 @@
-from pawn import Pawn
+from src.pawn import Pawn
 
 PLAYER_COLORS = {
     1: "blue",
