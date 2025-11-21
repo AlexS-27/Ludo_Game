@@ -1,4 +1,4 @@
-from src.cell import *
+from src.grid_and_board.cell import *
 
 #create the grid + id
 def create_grid(rows, cols, cell_width, cell_height):

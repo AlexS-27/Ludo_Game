@@ -1,4 +1,4 @@
-from src.cell import RED, GREEN, BLUE, YELLOW
+from src.grid_and_board.cell import RED, GREEN, BLUE, YELLOW
 
 #Create the different cell with colors
 def color_ludo(grid):

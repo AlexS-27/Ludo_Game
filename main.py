@@ -1,8 +1,8 @@
 import pygame
-from src.cell import RED, GREEN, BLUE, YELLOW
-from src.board import color_ludo
-from src.arrows import draw_wide_arrow
-from src.grid_setup import create_grid, setup_home_and_storage, setup_game_path
+from src.grid_and_board.cell import RED, GREEN, BLUE, YELLOW
+from src.grid_and_board.board import color_ludo
+from src.grid_and_board.arrows import draw_wide_arrow
+from src.grid_and_board.grid_setup import create_grid, setup_home_and_storage, setup_game_path
 
 pygame.init()
 #setup pygame
