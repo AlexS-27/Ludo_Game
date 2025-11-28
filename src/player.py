@@ -17,7 +17,15 @@ class Player:
             self.pawns.append(game_pawn)
 
     def play_turn(self, dice_value, board):
-        pass # to define later on
+        # define reserve/movable pawns
+        reserve_pawns = []
+        movable_pawns = []
+        for p in self.pawns:
+            if p.position is None and not p.is_finished:
+                reserve_pawns.append(p)
+        for p in self.pawns:
+            if p.position is not None and not p.is_finished:
+                movable_pawns.append(p)
 
     def has_won(self):
         for p in self.pawns:
