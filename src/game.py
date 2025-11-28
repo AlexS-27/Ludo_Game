@@ -1,5 +1,6 @@
 import random
 from player import Player
+from gamestate import GameState
 
 class Game:
     def __init__(self, players):
@@ -20,7 +21,6 @@ class Game:
         self.current_player_index = (self.current_player_index + 1) % len(self.players)
 
 
-
     def start_game(self):
         while not self.is_over:
             player = self.players[self.current_player_index]
@@ -34,3 +34,38 @@ class Game:
                 self.is_over = True
             else:
                 self.next_player()
+
+
+    def snapshot(self):
+        players_data = []
+
+        for player in self.players:
+            pawns_data = []
+            for p in player.pawns:
+                pawns_data.append({
+                    "pawn_id": p.pawn_id,
+                    "position": p.position,
+                    "is_finished": p.is_finished,
+                })
+            players_data.append({
+                "name": player.name,
+                "color": player.color,
+                "pawns": pawns_data,
+            })
+
+        board_data = {
+            # to be added later
+        }
+
+        return GameState(
+            players_data=players_data,
+            current_player_index=self.current_player_index,
+            board_data=board_data,
+            is_over=self.is_over,
+        )
+
+
+    # next needed methods:
+    # save the snapshot in JSON,
+    # load the snapshot from JSON,
+    # rebuilding of the game from the snapshot's info
