@@ -19,6 +19,9 @@ NORMAL_HORIZONTAL = "normal_horizontal"
 NORMAL_VERTICAL = "normal_vertical"
 HOME_AREA = "home_area"
 STORAGE = "storage"
+SAFE_PATH = "safe_path"
+CENTER = "center"
+
 
 # Coulors
 RED = (255, 0, 0)
@@ -60,7 +63,7 @@ class Cell:
                 pygame.draw.rect(surface, BLACK, (x, y, self.width, self.height), 1)
 
         # Afficher l'ID si case jouable
-        if self.id is not None and self.cell_type in [NORMAL_HORIZONTAL, NORMAL_VERTICAL]:
+        if self.id is not None and self.cell_type not in [HOME_AREA, STORAGE]:
             font = pygame.font.SysFont("Arial", 16)
             text = font.render(str(self.id), True, BLACK)
             surface.blit(text, (x + 10, y + 10))
@@ -224,7 +227,33 @@ for r in range(5, 0, -1):
     grid[r][6].id = game_id_counter
     game_id_counter += 1
 
+# Rouge (monte vers le centre)
+safe_id = 200
+for r in range(1, 6):
+    grid[r][7].cell_type = SAFE_PATH
+    grid[r][7].id = safe_id
+    safe_id += 1
 
+# Jaune (descend vers le centre)
+safe_id = 300
+for r in range(9, 14):
+    grid[r][7].cell_type = SAFE_PATH
+    grid[r][7].id = safe_id
+    safe_id += 1
+
+# Vert (va vers la droite)
+safe_id = 400
+for c in range(1, 6):
+    grid[7][c].cell_type = SAFE_PATH
+    grid[7][c].id = safe_id
+    safe_id += 1
+
+# Bleu (va vers la gauche)
+safe_id = 500
+for c in range(9, 14):
+    grid[7][c].cell_type = SAFE_PATH
+    grid[7][c].id = safe_id
+    safe_id += 1
 
 
 
