@@ -11,8 +11,15 @@ class Game:
     def dice_roll(self):
         return random.randint(1,6)
 
-    def next_player(self):
-        pass # to define later on
+    def next_player(self, last_roll):
+        # roll a 6 = play another turn
+        if last_roll == 6:
+            return
+
+        # use modulo to manage turn order (return to player[0] after player[3]'s turn
+        self.current_player_index = (self.current_player_index + 1) % len(self.players)
+
+
 
     def start_game(self):
         while not self.is_over:
