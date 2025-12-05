@@ -1,5 +1,6 @@
 import pygame
 import sys
+from src.linkwithdatabase import LoadGameDB, CreateNewGameDB
 
 # --- Initialization ---
 pygame.init()
@@ -118,28 +119,40 @@ def action_create():
     print(f"Name: {input_newgame_name.text}")
     #print(f"Pass: {input_ng_pass.text}")
     print(f"Players: {input_newgame_players.text}")
-    # Here you would add the code to actually start the game logic
-
+    newgame_entry_name = input_newgame_name.text
+    newgame_entry_password = input_newgame_pass.text
+    newdata = CreateNewGameDB(newgame_entry_name, newgame_entry_password)
+    if newdata:
+        print("Lancement du jeu")
 
 def action_load():
     print("--- Loading Game ---")
     print(f"Name: {input_loadgame_name.text}")
     #print(f"Pass: {input_loadgame_pass.text}")
+    print("--- Loading Game ---")
+    # Read what's written
+    game_entry_name = input_loadgame_name.text
+    game_entry_pass = input_loadgame_pass.text
 
+    # Send datas to db
+    data = LoadGameDB(game_entry_name, game_entry_pass)
+
+    if data:
+        print("Lancement du jeu...")
 
 # --- Widget Instantiation ---
 
-# 1. MENU SCREEN WIDGETS
+# MENU SCREEN WIDGETS
 btn_menu_newgame = Button(600, 500, 200, 50, "Start a new game", switch_to_new_game)
 btn_menu_loadgame = Button(600, 600, 200, 50, "Load an existing game", switch_to_load_game)
 
-# 2. NEW GAME SCREEN WIDGETS
+# NEW GAME SCREEN WIDGETS
 input_newgame_name = InputBox(500, 300, 400, 50)
 input_newgame_pass = InputBox(500, 420, 400, 50, is_password=True)
 input_newgame_players = InputBox(600, 540, 200, 50)  # Smaller box for numbers
 btn_create_confirm = Button(600, 650, 200, 50, "Create a new game", action_create)
 
-# 3. LOAD GAME SCREEN WIDGETS
+# LOAD GAME SCREEN WIDGETS
 input_loadgame_name = InputBox(500, 320, 400, 50)
 input_loadgame_pass = InputBox(500, 440, 400, 50, is_password=True)
 btn_load_confirm = Button(600, 600, 200, 50, "Load the game", action_load)
