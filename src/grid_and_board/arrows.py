@@ -2,7 +2,9 @@ import pygame
 
 # Créer la
 # Avec l'aide de chatGPT -Alex
-def draw_wide_arrow(surface, start_row, start_col, base_width=3, end_row=None, end_col=None, color=(255,0,0), cell_width=40, cell_height = 40,  direction="down"):
+def draw_wide_arrow(surface, start_row, start_col, base_width=3, end_row=None, end_col=None,
+                    color=(255,0,0), cell_width=40, cell_height=40, direction="down",
+                    offset_x=0, offset_y=0):
     """
     Dessine une flèche large :
     - base_width : nombre de cases pour la base
@@ -15,14 +17,13 @@ def draw_wide_arrow(surface, start_row, start_col, base_width=3, end_row=None, e
     if end_col is None:
         end_col = start_col
 
-    # Coordonnées de départ (en pixels)
-    x_start = start_col * cell_width
-    y_start = start_row * cell_height
+    # Coordonnées de départ en pixels
+    x_start = offset_x + start_col * cell_width
+    y_start = offset_y + start_row * cell_height
 
-    # Coordonnées de la pointe (centre de la case d’arrivée)
-    x_end = end_col * cell_width+ cell_width // 2
-    y_end = end_row * cell_height + cell_height // 2
-
+    # Coordonnées de la pointe
+    x_end = offset_x + end_col * cell_width + cell_width // 2
+    y_end = offset_y + end_row * cell_height + cell_height // 2
     if direction == "down":
         # base horizontale sur la ligne start_row
         x1 = x_start

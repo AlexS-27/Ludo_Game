@@ -7,10 +7,10 @@ class Game:
         self.current_player_index = 0
         self.board = None # to define more clearly after we finished working on the game board
         self.is_over = False
-
+    """
     def dice_roll(self):
         return random.randint(1,6)
-
+    """
     def next_player(self):
         pass # to define later on
 
