@@ -1,5 +1,8 @@
+from logging import exception
+
 import pygame
 import sys
+import traceback
 from src.linkwithdatabase import LoadGameDB, CreateNewGameDB
 
 # --- Initialization ---
@@ -22,215 +25,257 @@ FONT_TITLE = pygame.font.SysFont("Arial", 60, bold=True)
 FONT_LABEL = pygame.font.SysFont("Arial", 24)
 FONT_INPUT = pygame.font.SysFont("Arial", 28)
 
+def run_launcher():
+    # --- Class: Button ---
+    class Button:
+        def __init__(self, x, y, width, height, text, callback):
+            self.rect = pygame.Rect(x, y, width, height)
+            self.text = text
+            self.callback = callback
+            self.color = WHITE
+            self.hover_color = (230, 230, 230)
 
-# --- Class: Button ---
-class Button:
-    def __init__(self, x, y, width, height, text, callback):
-        self.rect = pygame.Rect(x, y, width, height)
-        self.text = text
-        self.callback = callback
-        self.color = WHITE
-        self.hover_color = (230, 230, 230)
+        def draw(self, surface):
+            mouse_pos = pygame.mouse.get_pos()
+            # Draw button background
+            curr_color = self.hover_color if self.rect.collidepoint(mouse_pos) else self.color
+            pygame.draw.rect(surface, curr_color, self.rect)
 
-    def draw(self, surface):
-        mouse_pos = pygame.mouse.get_pos()
-        # Draw button background
-        curr_color = self.hover_color if self.rect.collidepoint(mouse_pos) else self.color
-        pygame.draw.rect(surface, curr_color, self.rect)
+            # Draw Text
+            text_surf = FONT_LABEL.render(self.text, True, BLACK)
+            text_rect = text_surf.get_rect(center=self.rect.center)
+            surface.blit(text_surf, text_rect)
 
-        # Draw Text
-        text_surf = FONT_LABEL.render(self.text, True, BLACK)
-        text_rect = text_surf.get_rect(center=self.rect.center)
-        surface.blit(text_surf, text_rect)
-
-    def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if self.rect.collidepoint(event.pos):
-                self.callback()
+        def handle_event(self, event):
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if self.rect.collidepoint(event.pos):
+                    try:
+                        self.callback()
+                    except Exception:
+                        print("Exception in button callback:")
+                        traceback.print_exc()
 
 
-# --- Class: InputBox ---
-class InputBox:
-    def __init__(self, x, y, width, height, is_password=False, placeholder=""):
-        self.rect = pygame.Rect(x, y, width, height)
-        self.color = INACTIVE_BORDER
-        self.text = ""
-        self.is_password = is_password
-        self.active = False
-        self.placeholder = placeholder
+    # --- Class: InputBox ---
+    class InputBox:
+        def __init__(self, x, y, width, height, is_password=False, placeholder=""):
+            self.rect = pygame.Rect(x, y, width, height)
+            self.color = INACTIVE_BORDER
+            self.text = ""
+            self.is_password = is_password
+            self.active = False
+            self.placeholder = placeholder
 
-    def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            # Toggle active if user clicked on the box
-            if self.rect.collidepoint(event.pos):
-                self.active = not self.active
+        def handle_event(self, event):
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                # Toggle active if user clicked on the box
+                if self.rect.collidepoint(event.pos):
+                    self.active = not self.active
+                else:
+                    self.active = False
+                self.color = ACTIVE_BORDER if self.active else INACTIVE_BORDER
+
+            if event.type == pygame.KEYDOWN and self.active:
+                if event.key == pygame.K_RETURN:
+                    print(f"Input Submitted: {self.text}")  # Optional: Action on Enter
+                elif event.key == pygame.K_BACKSPACE:
+                    self.text = self.text[:-1]
+                else:
+                    # Add unicode character
+                    if event.unicode:
+                        self.text += event.unicode
+
+        def draw(self, surface):
+            # Draw background of input box (White)
+            pygame.draw.rect(surface, WHITE, self.rect)
+
+            # Render text (Mask it if it is a password)
+            display_text = "*" * len(self.text) if self.is_password else self.text
+
+            # Render the text surface
+            txt_surface = FONT_INPUT.render(display_text, True, BLACK)
+
+            # Vertical centering
+            surface.blit(txt_surface, (self.rect.x + 10, self.rect.y + 10))
+
+            # Draw the border (Blue if active, Grey if not)
+            pygame.draw.rect(surface, self.color, self.rect, 2)
+
+
+    # --- State Management ---
+    current_state = "MENU"  # Can be MENU, NEW_GAME, LOAD_GAME
+
+
+    # --- Callback Functions ---
+    def switch_to_new_game():
+        nonlocal current_state
+        current_state = "NEW_GAME"
+
+
+    def switch_to_load_game():
+        nonlocal current_state
+        current_state = "LOAD_GAME"
+
+
+    def switch_to_menu():
+        nonlocal current_state
+        current_state = "MENU"
+
+    def action_create():
+        nbr_player_text = input_newgame_players.text.strip()
+        if nbr_player_text == "":
+            # valeur par défaut si vide (optionnel : tu peux forcer l'utilisateur à saisir)
+            nbr_player = 1
+        else:
+            # tenter de convertir en entier pour gérer les erreurs
+            try:
+                nbr_player = int(nbr_player_text)
+            except ValueError:
+                print("Nombre de joueurs invalide : entrez un entier (1-4).")
+                return False
+
+        # Vérifier la plage autorisée (entre 1 et 4 joueurs)
+        if nbr_player < 1 or nbr_player > 4:
+            print("Le nombre de joueurs doit être entre 1 et 4.")
+            return False
+        else:
+            print("--- Creating Game ---")
+            print(f"Name: {input_newgame_name.text}")
+            print(f"Players: {input_newgame_players.text}")
+            newgame_entry_name = input_newgame_name.text
+            newgame_entry_password = input_newgame_pass.text
+            try:
+                newdata = CreateNewGameDB(newgame_entry_name, newgame_entry_password)
+                if newdata:
+                    print("Création OK — fermeture du launcher.")
+                    nonlocal running
+                    running = False
+                    return True
+                else:
+                    print("CreateNewGameDB indique un échec (nom déjà utilisé ou erreur).")
+            except Exception:
+                print("Error in CreateNewGameDB:")
+                traceback.print_exc()
+
+    def action_load():
+        print("--- Loading Game ---")
+        print(f"Name: {input_loadgame_name.text}")
+        game_entry_name = input_loadgame_name.text
+        game_entry_pass = input_loadgame_pass.text
+        try:
+            data = LoadGameDB(game_entry_name, game_entry_pass)
+            if data:
+                print("Chargement OK — fermeture du launcher.")
+                nonlocal running
+                running = False
+                return True
             else:
-                self.active = False
-            self.color = ACTIVE_BORDER if self.active else INACTIVE_BORDER
+                print("LoadGameDB indique un échec (pas trouvé / mauvais mot de passe).")
+        except Exception:
+            print("Error in LoadGameDB:")
+            traceback.print_exc()
 
-        if event.type == pygame.KEYDOWN and self.active:
-            if event.key == pygame.K_RETURN:
-                print(f"Input Submitted: {self.text}")  # Optional: Action on Enter
-            elif event.key == pygame.K_BACKSPACE:
-                self.text = self.text[:-1]
-            else:
-                # Add unicode character
-                self.text += event.unicode
+    # --- Widget Instantiation ---
 
-    def draw(self, surface):
-        # Draw background of input box (White)
-        pygame.draw.rect(surface, WHITE, self.rect)
+    # MENU SCREEN WIDGETS
+    btn_menu_newgame = Button(600, 500, 200, 50, "Start a new game", switch_to_new_game)
+    btn_menu_loadgame = Button(600, 600, 200, 50, "Load an existing game", switch_to_load_game)
 
-        # Render text (Mask it if it is a password) (With help of AI to hide password)
-        display_text = "*" * len(self.text) if self.is_password else self.text
+    # NEW GAME SCREEN WIDGETS
+    input_newgame_name = InputBox(500, 300, 400, 50)
+    input_newgame_pass = InputBox(500, 420, 400, 50, is_password=True)
+    input_newgame_players = InputBox(600, 540, 200, 50)  # Smaller box for numbers
+    btn_create_confirm = Button(600, 650, 200, 50, "Create a new game", action_create)
 
-        # Render the text surface
-        txt_surface = FONT_INPUT.render(display_text, True, BLACK)
+    # LOAD GAME SCREEN WIDGETS
+    input_loadgame_name = InputBox(500, 320, 400, 50)
+    input_loadgame_pass = InputBox(500, 440, 400, 50, is_password=True)
+    btn_load_confirm = Button(600, 600, 200, 50, "Load the game", action_load)
 
-        # Vertical centering
-        surface.blit(txt_surface, (self.rect.x + 10, self.rect.y + 10))
-
-        # Draw the border (Blue if active, Grey if not)
-        pygame.draw.rect(surface, self.color, self.rect, 2)
+    # Global Back Button (optional, to get back to menu during testing)
+    btn_back = Button(50, 50, 100, 40, "< Back", switch_to_menu)
 
 
-# --- State Management ---
-current_state = "MENU"  # Can be MENU, NEW_GAME, LOAD_GAME
+    # --- Drawing Helpers ---
+    def draw_text_centered(text, font, y_pos, color=BLACK):
+        s = font.render(text, True, color)
+        rect = s.get_rect(center=(screen_width // 2, y_pos))
+        screen.blit(s, rect)
 
 
-# --- Callback Functions ---
-def switch_to_new_game():
-    global current_state
-    current_state = "NEW_GAME"
+    # --- Main Loop ---
+    clock = pygame.time.Clock()
+    running = True
+    try:
+        while running:
+            screen.fill(BACKGROUND_GREY)
 
+            events = pygame.event.get()
+            for event in events:
+                if event.type == pygame.QUIT:
+                    running = False
 
-def switch_to_load_game():
-    global current_state
-    current_state = "LOAD_GAME"
+                # Handle Back Button everywhere except Main Menu
+                if current_state != "MENU":
+                    btn_back.handle_event(event)
 
+                # State-Specific Event Handling
+                if current_state == "MENU":
+                    btn_menu_newgame.handle_event(event)
+                    btn_menu_loadgame.handle_event(event)
 
-def switch_to_menu():
-    global current_state
-    current_state = "MENU"
+                elif current_state == "NEW_GAME":
+                    input_newgame_name.handle_event(event)
+                    input_newgame_pass.handle_event(event)
+                    input_newgame_players.handle_event(event)
+                    btn_create_confirm.handle_event(event)
 
+                elif current_state == "LOAD_GAME":
+                    input_loadgame_name.handle_event(event)
+                    input_loadgame_pass.handle_event(event)
+                    btn_load_confirm.handle_event(event)
 
-def action_create():
-    print("--- Creating Game ---")
-    print(f"Name: {input_newgame_name.text}")
-    #print(f"Pass: {input_ng_pass.text}")
-    print(f"Players: {input_newgame_players.text}")
-    newgame_entry_name = input_newgame_name.text
-    newgame_entry_password = input_newgame_pass.text
-    newdata = CreateNewGameDB(newgame_entry_name, newgame_entry_password)
-    if newdata:
-        print("Lancement du jeu")
+            # --- Drawing ---
+            if current_state == "MENU":
+                draw_text_centered("Welcome to", FONT_TITLE, 250)
+                draw_text_centered("LudoGame!", FONT_TITLE, 320)
+                btn_menu_newgame.draw(screen)
+                btn_menu_loadgame.draw(screen)
 
-def action_load():
-    print("--- Loading Game ---")
-    print(f"Name: {input_loadgame_name.text}")
-    #print(f"Pass: {input_loadgame_pass.text}")
-    print("--- Loading Game ---")
-    # Read what's written
-    game_entry_name = input_loadgame_name.text
-    game_entry_pass = input_loadgame_pass.text
+            elif current_state == "NEW_GAME":
+                btn_back.draw(screen)  # Helper to go back
 
-    # Send datas to db
-    data = LoadGameDB(game_entry_name, game_entry_pass)
+                draw_text_centered("Please give your game a name :", FONT_LABEL, 270)
+                input_newgame_name.draw(screen)
 
-    if data:
-        print("Lancement du jeu...")
+                draw_text_centered("Please give your game a password :", FONT_LABEL, 390)
+                input_newgame_pass.draw(screen)
 
-# --- Widget Instantiation ---
+                draw_text_centered("How many players will compete ?", FONT_LABEL, 510)
+                input_newgame_players.draw(screen)
 
-# MENU SCREEN WIDGETS
-btn_menu_newgame = Button(600, 500, 200, 50, "Start a new game", switch_to_new_game)
-btn_menu_loadgame = Button(600, 600, 200, 50, "Load an existing game", switch_to_load_game)
+                btn_create_confirm.draw(screen)
 
-# NEW GAME SCREEN WIDGETS
-input_newgame_name = InputBox(500, 300, 400, 50)
-input_newgame_pass = InputBox(500, 420, 400, 50, is_password=True)
-input_newgame_players = InputBox(600, 540, 200, 50)  # Smaller box for numbers
-btn_create_confirm = Button(600, 650, 200, 50, "Create a new game", action_create)
+            elif current_state == "LOAD_GAME":
+                btn_back.draw(screen)  # Helper to go back
 
-# LOAD GAME SCREEN WIDGETS
-input_loadgame_name = InputBox(500, 320, 400, 50)
-input_loadgame_pass = InputBox(500, 440, 400, 50, is_password=True)
-btn_load_confirm = Button(600, 600, 200, 50, "Load the game", action_load)
+                draw_text_centered("Please enter the game's name :", FONT_LABEL, 290)
+                input_loadgame_name.draw(screen)
 
-# Global Back Button (optional, to get back to menu during testing)
-btn_back = Button(50, 50, 100, 40, "< Back", switch_to_menu)
+                draw_text_centered("Please enter the game's password :", FONT_LABEL, 410)
+                input_loadgame_pass.draw(screen)
 
+                btn_load_confirm.draw(screen)
 
-# --- Drawing Helpers ---
-def draw_text_centered(text, font, y_pos, color=BLACK):
-    s = font.render(text, True, color)
-    rect = s.get_rect(center=(screen_width // 2, y_pos))
-    screen.blit(s, rect)
+            pygame.display.flip()
+            clock.tick(60)
 
+    except Exception:
+        print("Unhandled exception in main loop:")
+        traceback.print_exc()
+    finally:
+        pygame.quit()
+        return False
 
-# --- Main Loop ---
-running = True
-while running:
-    screen.fill(BACKGROUND_GREY)
-
-    events = pygame.event.get()
-    for event in events:
-        if event.type == pygame.QUIT:
-            running = False
-
-        # Handle Back Button everywhere except Main Menu
-        if current_state != "MENU":
-            btn_back.handle_event(event)
-
-        # State-Specific Event Handling
-        if current_state == "MENU":
-            btn_menu_newgame.handle_event(event)
-            btn_menu_loadgame.handle_event(event)
-
-        elif current_state == "NEW_GAME":
-            input_newgame_name.handle_event(event)
-            input_newgame_pass.handle_event(event)
-            input_newgame_players.handle_event(event)
-            btn_create_confirm.handle_event(event)
-
-        elif current_state == "LOAD_GAME":
-            input_loadgame_name.handle_event(event)
-            input_loadgame_pass.handle_event(event)
-            btn_load_confirm.handle_event(event)
-
-    # --- Drawing ---
-    if current_state == "MENU":
-        draw_text_centered("Welcome to", FONT_TITLE, 250)
-        draw_text_centered("LudoGame!", FONT_TITLE, 320)
-        btn_menu_newgame.draw(screen)
-        btn_menu_loadgame.draw(screen)
-
-    elif current_state == "NEW_GAME":
-        btn_back.draw(screen)  # Helper to go back
-
-        draw_text_centered("Please give your game a name :", FONT_LABEL, 270)
-        input_newgame_name.draw(screen)
-
-        draw_text_centered("Please give your game a password :", FONT_LABEL, 390)
-        input_newgame_pass.draw(screen)
-
-        draw_text_centered("How many players will compete ?", FONT_LABEL, 510)
-        input_newgame_players.draw(screen)
-
-        btn_create_confirm.draw(screen)
-
-    elif current_state == "LOAD_GAME":
-        btn_back.draw(screen)  # Helper to go back
-
-        draw_text_centered("Please enter the game's name :", FONT_LABEL, 290)
-        input_loadgame_name.draw(screen)
-
-        draw_text_centered("Please enter the game's password :", FONT_LABEL, 410)
-        input_loadgame_pass.draw(screen)
-
-        btn_load_confirm.draw(screen)
-
-    pygame.display.flip()
-
-pygame.quit()
-sys.exit()
+if __name__ == "__main__":
+    run_launcher()
