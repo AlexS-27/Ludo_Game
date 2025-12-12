@@ -1,12 +1,14 @@
 import pygame
 
+# Créer avec l'aide de chatGPT -Alex
 def draw_wide_arrow(surface, start_row, start_col, base_width=3, end_row=None, end_col=None,
-                    color=(255, 0, 0), cell_width=40, cell_height=40, direction="down"):
+                    color=(255,0,0), cell_width=40, cell_height=40, direction="down",
+                    offset_x=0, offset_y=0):
     """
     Dessine une flèche large :
-    - base_width : largeur de base en nombre de cases
-    - start_row, start_col : position de la base
-    - end_row, end_col : position de la pointe
+    - base_width : nombre de cases pour la base
+    - start_row, start_col : case de départ (coin supérieur/gauche de la base)
+    - end_row, end_col : case d'arrivée (pointe)
     - direction : "down", "up", "left", "right"
     """
     if end_row is None:
@@ -15,12 +17,12 @@ def draw_wide_arrow(surface, start_row, start_col, base_width=3, end_row=None, e
         end_col = start_col
 
     # Coordinates of the base origin (top-left of starting cell)
-    x_start = start_col * cell_width
-    y_start = start_row * cell_height
+    x_start = offset_x + start_col * cell_width
+    y_start = offset_y + start_row * cell_height
 
     # Coordinates of the arrow tip (center of target cell)
-    x_end = end_col * cell_width + cell_width // 2
-    y_end = end_row * cell_height + cell_height // 2
+    x_end = offset_x + end_col * cell_width + cell_width // 2
+    y_end = offset_y + end_row * cell_height + cell_height // 2
 
     if direction == "down":
         x1 = x_start
@@ -48,7 +50,11 @@ def draw_wide_arrow(surface, start_row, start_col, base_width=3, end_row=None, e
     pygame.draw.polygon(surface, color, [(x1, y1), (x2, y2), (x_end, y_end)])
 
 
-def draw_entry_arrows(surface, cell_width, cell_height):
+def draw_entry_arrows(surface, start_row, start_col, base_width,
+                      end_row, end_col, color,
+                      cell_width, cell_height,
+                      direction,
+                      offset_x, offset_y):
     """
     Dessine toutes les flèches d'arrivée du plateau Ludo.
     Cette fonction encapsule toute la logique des flèches pour éviter
@@ -56,34 +62,34 @@ def draw_entry_arrows(surface, cell_width, cell_height):
     """
     from src.grid_and_board.cell import RED, GREEN, BLUE, YELLOW
 
-    # Red arrow (down)
+    # RED → down
     draw_wide_arrow(
-        surface, 6, 6, base_width=3,
+        surface, start_row=6, start_col=6, base_width=3,
         end_row=7, end_col=7,
         color=RED, cell_width=cell_width, cell_height=cell_height,
-        direction="down"
+        direction="down", offset_x=offset_x, offset_y=offset_y
     )
 
-    # Green arrow (right)
+    # GREEN → right
     draw_wide_arrow(
-        surface, 6, 6, base_width=3,
+        surface, start_row=6, start_col=6, base_width=3,
         end_row=7, end_col=7,
         color=GREEN, cell_width=cell_width, cell_height=cell_height,
-        direction="right"
+        direction="right", offset_x=offset_x, offset_y=offset_y
     )
 
-    # Yellow arrow (up)
+    # YELLOW → up
     draw_wide_arrow(
-        surface, 8, 6, base_width=3,
+        surface, start_row=8, start_col=6, base_width=3,
         end_row=7, end_col=7,
         color=YELLOW, cell_width=cell_width, cell_height=cell_height,
-        direction="up"
+        direction="up", offset_x=offset_x, offset_y=offset_y
     )
 
-    # Blue arrow (left)
+    # BLUE → left
     draw_wide_arrow(
-        surface, 6, 8, base_width=3,
+        surface, start_row=6, start_col=8, base_width=3,
         end_row=7, end_col=7,
         color=BLUE, cell_width=cell_width, cell_height=cell_height,
-        direction="left"
+        direction="left", offset_x=offset_x, offset_y=offset_y
     )
