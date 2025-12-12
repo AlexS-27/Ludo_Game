@@ -1,6 +1,6 @@
+# grid_setup.py
 from src.grid_and_board.cell import *
 
-#create the grid + id
 def create_grid(rows, cols, cell_width, cell_height):
     grid = [[Cell(r, c, cell_width, cell_height) for c in range(cols)] for r in range(rows)]
     return grid
@@ -107,5 +107,34 @@ def setup_game_path(grid):
         grid[r][6].cell_type = NORMAL_VERTICAL
         grid[r][6].id = game_id_counter
         game_id_counter += 1
+
+    # Safe paths (chemins finaux vers le centre) - identifiants 200,300,400,500
+    # Rouge (monte vers le centre) : (r=1..5, c=7)
+    safe_id = 200
+    for r in range(1, 6):
+        grid[r][7].cell_type = SAFE_PATH
+        grid[r][7].id = safe_id
+        safe_id += 1
+
+    # Jaune (descend vers le centre) : (r=9..13, c=7)
+    safe_id = 300
+    for r in range(13, 8, -1):
+        grid[r][7].cell_type = SAFE_PATH
+        grid[r][7].id = safe_id
+        safe_id += 1
+
+    # Vert (va vers la droite) : (r=7, c=1..5)
+    safe_id = 400
+    for c in range(1, 6):
+        grid[7][c].cell_type = SAFE_PATH
+        grid[7][c].id = safe_id
+        safe_id += 1
+
+    # Bleu (va vers la gauche) : (r=7, c=9..13)
+    safe_id = 500
+    for c in range(13, 8, -1):
+        grid[7][c].cell_type = SAFE_PATH
+        grid[7][c].id = safe_id
+        safe_id += 1
 
     return game_id_counter
