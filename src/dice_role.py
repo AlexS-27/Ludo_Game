@@ -31,8 +31,8 @@ class Dice:
                 self.current_display = self.result
                 self.animating = False
 
-    def draw(self, screen, font):
+    def draw(self, screen, font, x=0, y=0):
         text = font.render(str(self.current_display), True, (255,255,255))
-        screen.blit(text, (300,300))
+        screen.blit(text, (x,y))
 
 

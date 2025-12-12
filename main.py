@@ -92,6 +92,8 @@ def draw_sidebar(surface):
     pygame.draw.rect(surface, (12, 12, 12), btn, 2, border_radius=8)
     surface.blit(sf.render("Lancer le dé", True, (12, 12, 12)), (btn.left + 16, btn.top + 8))
 
+    return btn
+
 def draw_board_background(surface, left, top, cols, rows, cell_w, cell_h):
     # subtle shadow panel
     board_w = cols * cell_w
@@ -115,6 +117,7 @@ while run:
 
     dice.update()
     dice.draw(screen, font)
+    roll_button_rect = draw_sidebar(screen)
 
     dt = clock.tick(FPS) / 1000.0
     pulse_t += dt
@@ -131,6 +134,10 @@ while run:
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             mx, my = pygame.mouse.get_pos()
+
+            if roll_button_rect.collidepoint(event.pos):
+                print("🎲 Bouton cliqué !")
+                dice.start_animation()
             # translate coords to board-local
             row, col = world_to_cell(mx, my, BOARD_LEFT, BOARD_TOP, CELL_WIDTH, CELL_HEIGHT)
             if 0 <= row < ROWS and 0 <= col < COLS:
@@ -150,6 +157,13 @@ while run:
     draw_header(screen)
     draw_sidebar(screen)
     draw_board_background(screen, BOARD_LEFT, BOARD_TOP, COLS, ROWS, CELL_WIDTH, CELL_HEIGHT)
+
+    dice.update()
+    dice_x = roll_button_rect.left
+    dice_y = roll_button_rect.bottom + 20
+    dice.draw(screen, font, x=dice_x, y=dice_y)
+
+
 
     # draw cells
     for r in range(ROWS):
