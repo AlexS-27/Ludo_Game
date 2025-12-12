@@ -200,14 +200,14 @@ for r in range(5, 0, -1):
 
 # Rouge (monte vers le centre)
 safe_id = 200
-for r in range(1, 6):
+for r in range(1, 7):
     grid[r][7].cell_type = SAFE_PATH
     grid[r][7].id = safe_id
     safe_id += 1
 
 # Jaune (descend vers le centre)
 safe_id = 300
-for c in range(13, 8, -1):
+for r in range(13, 8, -1):
     grid[r][7].cell_type = SAFE_PATH
     grid[r][7].id = safe_id
     safe_id += 1
