@@ -1,3 +1,4 @@
+# cell.py
 import pygame
 
 # cell type
@@ -5,8 +6,10 @@ NORMAL_HORIZONTAL = "normal_horizontal"
 NORMAL_VERTICAL = "normal_vertical"
 HOME_AREA = "home_area"
 STORAGE = "storage"
+SAFE_PATH = "safe_path"   # <- ajouté pour centraliser la constante
+CENTER = "center"        # <- optionnel, utile si besoin futur
 
-# Coulors
+# Couleurs
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
@@ -16,7 +19,7 @@ BLACK = (0, 0, 0)
 
 # class to create the cells
 class Cell:
-    def __init__(self, row, col, width, height, cell_type= NORMAL_HORIZONTAL, id=None, color=WHITE):
+    def __init__(self, row, col, width, height, cell_type=NORMAL_HORIZONTAL, id=None, color=WHITE):
         self.row = row
         self.col = col
         self.width = width
@@ -32,15 +35,12 @@ class Cell:
         y = self.row * self.height
 
         if self.cell_type == STORAGE:
-            # cercle
-            center = (x + self.width//2, y + self.height//2)
-            radius = min(self.width, self.height)//2 - 4
+            center = (x + self.width // 2, y + self.height // 2)
+            radius = min(self.width, self.height) // 2 - 4
             pygame.draw.circle(surface, self.color, center, radius)
             pygame.draw.circle(surface, BLACK, center, radius, 2)
         else:
-            # rectangle
             pygame.draw.rect(surface, self.color, (x, y, self.width, self.height))
-
             if self.border_width > 0:
                 pygame.draw.rect(surface, BLACK, (x, y, self.width, self.height), 1)
 
