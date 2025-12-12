@@ -10,7 +10,8 @@ pygame.font.init()
 # setup pygame
 screen = pygame.display.set_mode((1400, 900), pygame.RESIZABLE)
 screen_width, screen_height = screen.get_size()
-pygame.display.set_caption("Ludo Game — Styled UI")
+#setup window's title
+pygame.display.set_caption("Ludo Game")
 
 # Grid
 ROWS, COLS = 15, 15
@@ -106,10 +107,14 @@ while run:
 
     events = pygame.event.get()
     for event in events:
+        #quit pygame
         if event.type == pygame.QUIT:
             run = False
+        #React to resize
         if event.type == pygame.VIDEORESIZE:
             screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
+
+        #Cliquer : Montre l'id de la case -Alex
         if event.type == pygame.MOUSEBUTTONDOWN:
             mx, my = pygame.mouse.get_pos()
             # translate coords to board-local
