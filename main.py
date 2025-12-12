@@ -1,7 +1,8 @@
+# main.py
 import pygame
 from src.grid_and_board.cell import RED, GREEN, BLUE, YELLOW, WHITE, BLACK, Cell, BORDER
 from src.grid_and_board.board import color_ludo
-from src.grid_and_board.arrows import draw_wide_arrow
+from src.grid_and_board.arrows import draw_entry_arrows
 from src.grid_and_board.grid_setup import create_grid, setup_home_and_storage, setup_game_path
 from src.dice_role import Dice
 
@@ -14,15 +15,18 @@ screen_width, screen_height = screen.get_size()
 #setup window's title
 pygame.display.set_caption("Ludo Game")
 
-# Grid
+# Grid configuration
 ROWS, COLS = 15, 15
 CELL_WIDTH, CELL_HEIGHT = 50, 50
 colors = {"RED": RED, "BLUE": BLUE, "YELLOW": YELLOW, "GREEN": GREEN}
 
-# create grid & layout
+# Initialize grid
 grid = create_grid(ROWS, COLS, CELL_WIDTH, CELL_HEIGHT)
+# Apply coloring (board.py)
 color_ludo(grid)
+# Setup home areas and storage cells
 setup_home_and_storage(grid, colors)
+# Setup paths
 setup_game_path(grid)
 
 # UI layout constants
@@ -103,8 +107,10 @@ def world_to_cell(mx, my, left, top, cw, ch):
     row = (my - top) // ch
     return int(row), int(col)
 
-# main loop
+# Main loop
 run = True
+clock = pygame.time.Clock()
+
 while run:
 
     dice.update()
@@ -113,6 +119,7 @@ while run:
     dt = clock.tick(FPS) / 1000.0
     pulse_t += dt
 
+    # Event handling
     events = pygame.event.get()
     for event in events:
         #quit pygame
@@ -122,7 +129,6 @@ while run:
         if event.type == pygame.VIDEORESIZE:
             screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
 
-        #Cliquer : Montre l'id de la case -Alex
         if event.type == pygame.MOUSEBUTTONDOWN:
             mx, my = pygame.mouse.get_pos()
             # translate coords to board-local
@@ -166,31 +172,17 @@ while run:
         rect = pygame.Rect(BOARD_LEFT + clicked_cell.col * CELL_WIDTH, BOARD_TOP + clicked_cell.row * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT)
         pygame.draw.rect(screen, (255, 255, 255), rect, 2, border_radius=8)
     #Draw arrow
-    #Red arrow
-    draw_wide_arrow(screen, start_row=6, start_col=6, base_width=3,
-                    end_row=7, end_col=7, color=RED,
-                    cell_width=CELL_WIDTH, cell_height=CELL_HEIGHT,
-                    direction="down",
-                    offset_x=BOARD_LEFT, offset_y=BOARD_TOP)
-    #Green arrow
-    draw_wide_arrow(screen, start_row=6, start_col=6, base_width=3,
-                    end_row=7, end_col=7, color=GREEN,
-                    cell_width=CELL_WIDTH, cell_height=CELL_HEIGHT,
-                    direction="right",
-                    offset_x=BOARD_LEFT, offset_y=BOARD_TOP)
-    #Yellow arrow
-    draw_wide_arrow(screen, start_row=8, start_col=6, base_width=3,
-                    end_row=7, end_col=7, color=YELLOW,
-                    cell_width=CELL_WIDTH, cell_height=CELL_HEIGHT,
-                    direction="up",
-                    offset_x=BOARD_LEFT, offset_y=BOARD_TOP)
-    #Blue arrow
-    draw_wide_arrow(screen, start_row=6, start_col=8, base_width=3,
-                    end_row=7, end_col=7, color=BLUE,
-                    cell_width=CELL_WIDTH, cell_height=CELL_HEIGHT,
-                    direction="left",
-                    offset_x=BOARD_LEFT, offset_y=BOARD_TOP)
+    # Draw arrival arrows
+    draw_entry_arrows(
+        screen,
+        start_row=6, start_col=6, base_width=3,
+        end_row=7, end_col=7, color=RED,
+        cell_width=CELL_WIDTH, cell_height=CELL_HEIGHT,
+        direction="down",
+        offset_x=BOARD_LEFT, offset_y=BOARD_TOP
+    )
 
     pygame.display.flip()
+    clock.tick(60)
 
 pygame.quit()

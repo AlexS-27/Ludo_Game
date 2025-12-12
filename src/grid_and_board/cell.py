@@ -5,6 +5,8 @@ NORMAL_HORIZONTAL = "normal_horizontal"
 NORMAL_VERTICAL = "normal_vertical"
 HOME_AREA = "home_area"
 STORAGE = "storage"
+SAFE_PATH = "safe_path"   # <- ajouté pour centraliser la constante
+CENTER = "center"        # <- optionnel, utile si besoin futur
 
 # Colors
 RED = (230, 60, 60)
@@ -17,7 +19,7 @@ BORDER = (40, 40, 48)
 
 # class to create the cells
 class Cell:
-    def __init__(self, row, col, width, height, cell_type= NORMAL_HORIZONTAL, id=None, color=WHITE):
+    def __init__(self, row, col, width, height, cell_type=NORMAL_HORIZONTAL, id=None, color=WHITE):
         self.row = row
         self.col = col
         self.width = width
