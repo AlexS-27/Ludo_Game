@@ -3,6 +3,7 @@ from src.grid_and_board.cell import RED, GREEN, BLUE, YELLOW, WHITE, BLACK, Cell
 from src.grid_and_board.board import color_ludo
 from src.grid_and_board.arrows import draw_wide_arrow
 from src.grid_and_board.grid_setup import create_grid, setup_home_and_storage, setup_game_path
+from src.dice_role import Dice
 
 pygame.init()
 pygame.font.init()
@@ -40,6 +41,9 @@ clicked_cell = None
 
 # Simple pulse timer for arrow animation
 pulse_t = 0.0
+
+dice = Dice()
+font = pygame.font.Font(None, 80)
 
 def draw_gradient_background(surface, top_color=(30, 30, 40), bottom_color=(12, 12, 20)):
     """Vertical gradient background"""
@@ -102,6 +106,10 @@ def world_to_cell(mx, my, left, top, cw, ch):
 # main loop
 run = True
 while run:
+
+    dice.update()
+    dice.draw(screen, font)
+
     dt = clock.tick(FPS) / 1000.0
     pulse_t += dt
 
