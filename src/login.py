@@ -274,8 +274,8 @@ def run_launcher():
         print("Unhandled exception in main loop:")
         traceback.print_exc()
     finally:
-        pygame.quit()
-        return False
+        running = False
+        return True
 
 if __name__ == "__main__":
     run_launcher()

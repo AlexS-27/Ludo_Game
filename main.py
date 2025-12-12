@@ -5,6 +5,14 @@ from src.grid_and_board.board import color_ludo
 from src.grid_and_board.arrows import draw_entry_arrows
 from src.grid_and_board.grid_setup import create_grid, setup_home_and_storage, setup_game_path
 from src.dice_role import Dice
+from src.linkwithdatabase import get_connection
+from src.login import run_launcher
+
+# --- Setup DB ---
+custom_path = "./docs/Database/ludo.db"
+conn = get_connection(custom_path)
+cursor = conn.cursor()
+
 
 pygame.init()
 pygame.font.init()
@@ -109,6 +117,19 @@ def world_to_cell(mx, my, left, top, cw, ch):
     row = (my - top) // ch
     return int(row), int(col)
 
+# --- LOGIN LOOP ---
+connected = run_launcher()
+
+if not connected:
+    pygame.quit()
+    exit()
+
+
+# réutiliser la fenêtre existante ou la recréer
+screen = pygame.display.set_mode((1400, 900), pygame.RESIZABLE)
+pygame.display.set_caption("Ludo Game")
+
+
 # Main loop
 run = True
 clock = pygame.time.Clock()
@@ -199,4 +220,5 @@ while run:
     pygame.display.flip()
     clock.tick(60)
 
+conn.close()
 pygame.quit()
