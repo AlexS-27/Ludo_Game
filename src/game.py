@@ -95,24 +95,21 @@ class Game:
         self.rolled_dice = None
 
     def try_to_release_pawn(self, pawn, dice_value):
-        """ Tente de sortir un pion du storage vers la case de départ """
+        """ Tente de sortir un pion et donne un petit bonus """
         if dice_value != ROLL_TO_RELEASE:
-            self.set_message(f"Need a {ROLL_TO_RELEASE} to release, not {dice_value}.")
+            self.set_message(f"Need a {ROLL_TO_RELEASE} to release.")
             return False
 
         start_pos_id = PLAYER_START_POSITIONS[pawn.player.color]
 
-        # Vérifier si la case de départ est déjà occupée par un de ses propres pions
-        my_pawns_at_start = [p for p in pawn.player.pawns if p.position == start_pos_id]
-        if my_pawns_at_start:
-            self.set_message("Starting cell is blocked by your own pawn.")
+        if any(p.position == start_pos_id for p in pawn.player.pawns):
+            self.set_message("Starting cell is blocked.")
             return False
 
-        # Gérer la capture si un ennemi est sur la case
         self.check_collision(start_pos_id)
-
         pawn.position = start_pos_id
-        self.set_message(f"Pawn released to position {start_pos_id}!")
+        pawn.player.score += 10  # +10 points pour être sorti du storage
+        self.set_message(f"Pawn out! (+10 pts)")
         return True
 
     def try_to_move_pawn(self, pawn, dice_value):
@@ -175,14 +172,17 @@ class Game:
         return True
 
     def _validate_pawn_finish(self, pawn):
-        """ Utilitaire pour sortir le pion et marquer le point """
+        """ Utilitaire pour sortir le pion et marquer le point avec bonus de score """
         pawn.is_finished = True
-        pawn.position = None  # Le pion n'est plus sur le plateau
-        self.set_message(f"Great! A {pawn.player.color} pawn has finished its journey!")
+        pawn.position = None
+        pawn.player.score += 100  # +100 points pour un pion qui termine
+        self.set_message(f"BRAVO! {pawn.player.name} reached the goal (+100 pts)!")
 
     def check_collision(self, position_id):
-        """ Renvoie les pions adverses en storage s'ils sont sur la case d'arrivée """
+        """ Renvoie les pions adverses en storage et attribue des points de capture """
         current_player = self.players[self.current_player_index]
+        captured = False
+
         for player in self.players:
             if player == current_player:
                 continue
@@ -190,7 +190,10 @@ class Game:
             for pawn in player.pawns:
                 if pawn.position == position_id:
                     pawn.position = None  # Retour en storage
-                    self.set_message(f"Captured {player.color}'s pawn!")
+                    current_player.score += 50  # +50 points pour une capture
+                    self.set_message(f"BOOM! {current_player.name} captured {player.color} (+50 pts)!")
+                    captured = True
+        return captured
 
     def post_move_cleanup(self):
         """ Vérifie la victoire et passe au tour suivant """

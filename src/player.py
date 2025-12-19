@@ -12,6 +12,7 @@ class Player:
     def __init__(self, name, index):
         self.name = name
         self.color = PLAYER_COLORS[index]
+        self.score = 0
         self.pawns = []
         for i in range(4):
             # L'ID du pion est important pour le localiser dans la zone de stockage
