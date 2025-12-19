@@ -2,7 +2,7 @@ import random
 from src.player import Player
 from src.gamestate import GameState
 from src.grid_and_board.cell import RED, GREEN, BLUE, YELLOW, NORMAL_HORIZONTAL, NORMAL_VERTICAL, SAFE_PATH, STORAGE
-from src.grid_and_board.grid_setup import PLAYER_START_POSITIONS, PLAYER_ENTRY_CELLS # Nécessite une MàJ de grid_setup
+#from src.grid_and_board.grid_setup import PLAYER_START_POSITIONS, PLAYER_ENTRY_CELLS # Nécessite une MàJ de grid_setup
 
 ROLL_TO_RELEASE = 5
 START_POSITION_ID = 1

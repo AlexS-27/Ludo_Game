@@ -4,7 +4,7 @@ from src.grid_and_board.cell import RED, GREEN, BLUE, YELLOW, WHITE, BLACK, Cell
 from src.grid_and_board.board import color_ludo
 from src.grid_and_board.arrows import draw_entry_arrows
 from src.grid_and_board.grid_setup import create_grid, setup_home_and_storage, setup_game_path
-from src.dice_role import Dice
+from src.dice_roll import Dice
 from src.linkwithdatabase import get_connection
 from src.login import run_launcher
 from src.game import Game
@@ -244,117 +244,76 @@ def handle_pawn_click(row, col):
 run = True
 
 while run:
-
-    dice.update()
-    dice.draw(screen, font)
-    roll_button_rect = draw_sidebar(screen)
-
     dt = clock.tick(FPS) / 1000.0
     pulse_t += dt
 
-    # Event handling
-    events = pygame.event.get()
-    for event in events:
-        # quit pygame
+    # ================= EVENTS =================
+    for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
-        # React to resize
+
         if event.type == pygame.VIDEORESIZE:
             screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
 
         if event.type == pygame.MOUSEBUTTONDOWN:
-            mx, my = pygame.mouse.get_pos()
+            mx, my = event.pos
 
-            if roll_button_rect.collidepoint(event.pos):
-                print("🎲 Bouton cliqué !")
-                dice.start_animation()
-            # translate coords to board-local
-"""
-            # Click on the dice button
-            if dice_btn_rect and dice_btn_rect.collidepoint(mx, my):
+            # Dice button
+            if roll_button_rect and roll_button_rect.collidepoint(mx, my):
                 if not dice.animating and game.rolled_dice is None:
-                    # Roll the dice, begin animation
                     dice.start_animation()
-                    game.set_message("Dice rolled !")
-                    # Result will be updated in dice.update() and fetched here after the animation
-                elif game.rolled_dice is not None:
-                    # If the dice was already rolled, then the button is useless. Wait on pawn select click.
-                    game.set_message("Select a pwan to move.")
-"""
-            # Click on the board
+
+            # Board click
             row, col = world_to_cell(mx, my, BOARD_LEFT, BOARD_TOP, CELL_WIDTH, CELL_HEIGHT)
             if 0 <= row < ROWS and 0 <= col < COLS:
                 clicked_cell = grid[row][col]
-                # print(f"Cell clicked: ID={clicked_cell.id}, Type={clicked_cell.cell_type}, RowCol=({row},{col})")
-
-                # If the dice was rolled, try to move a pawn
                 if game.rolled_dice is not None and not dice.animating:
                     handle_pawn_click(row, col)
 
-    # After the dice finished the animation, update the result in-game
+    # ================= UPDATE =================
+    dice.update()
+
     if not dice.animating and dice.result is not None and game.rolled_dice is None:
         game.rolled_dice = dice.result
         game.set_message(f"Dice roll: {game.rolled_dice}. Select a pawn.")
-        # Reset dice object for next turn
         dice.result = None
 
-    # hover tracking
+    # Hover
     mx, my = pygame.mouse.get_pos()
     hr, hc = world_to_cell(mx, my, BOARD_LEFT, BOARD_TOP, CELL_WIDTH, CELL_HEIGHT)
-    if 0 <= hr < ROWS and 0 <= hc < COLS:
-        hover_cell = grid[hr][hc]
-    else:
-        hover_cell = None
+    hover_cell = grid[hr][hc] if 0 <= hr < ROWS and 0 <= hc < COLS else None
 
-    # draw background & UI
+    # ================= DRAW =================
     draw_gradient_background(screen)
     draw_header(screen)
-    draw_sidebar(screen)
+
+    roll_button_rect = draw_sidebar(screen)
+
     draw_board_background(screen, BOARD_LEFT, BOARD_TOP, COLS, ROWS, CELL_WIDTH, CELL_HEIGHT)
 
-    dice.update()
-    dice_x = roll_button_rect.left
-    dice_y = roll_button_rect.bottom + 20
-    dice.draw(screen, font, x=dice_x, y=dice_y)
-
-
-
-    # draw cells
+    # Grid
     for r in range(ROWS):
         for c in range(COLS):
-            cell = grid[r][c]
-            # temporarily offset the cell drawing by BOARD_LEFT/BOARD_TOP
-            # so we translate cell.draw to use the board origin
-            cell.draw(screen, x_offset=BOARD_LEFT, y_offset=BOARD_TOP)
+            grid[r][c].draw(screen, BOARD_LEFT, BOARD_TOP)
 
-    # highlights
+    # Hover highlight
     if hover_cell:
-        # draw light overlay on hover
-        rect = pygame.Rect(BOARD_LEFT + hover_cell.col * CELL_WIDTH, BOARD_TOP + hover_cell.row * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT)
-        s = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-        s.fill((255, 255, 255, 28))
-        pygame.draw.rect(s, (255, 255, 255, 18), s.get_rect(), border_radius=8)
-        screen.blit(s, rect.topleft)
+        rect = pygame.Rect(
+            BOARD_LEFT + hover_cell.col * CELL_WIDTH,
+            BOARD_TOP + hover_cell.row * CELL_HEIGHT,
+            CELL_WIDTH, CELL_HEIGHT
+        )
+        pygame.draw.rect(screen, (255, 255, 255), rect, 2)
 
-    if clicked_cell:
-        rect = pygame.Rect(BOARD_LEFT + clicked_cell.col * CELL_WIDTH, BOARD_TOP + clicked_cell.row * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT)
-        pygame.draw.rect(screen, (255, 255, 255), rect, 2, border_radius=8)
-
-    # Draw pawns
+    # Pawns
     draw_pawns(screen, grid, BOARD_LEFT, BOARD_TOP, CELL_WIDTH, CELL_HEIGHT)
 
-    # Draw arrow (une seule pour l'exemple)
-    draw_entry_arrows(
+    # Dice (positionné sous le bouton)
+    dice.draw(
         screen,
-        start_row=6, start_col=6, base_width=3,
-        end_row=7, end_col=7, color=RED,
-        cell_width=CELL_WIDTH, cell_height=CELL_HEIGHT,
-        direction="down",
-        offset_x=BOARD_LEFT, offset_y=BOARD_TOP
+        font,
+        x=roll_button_rect.left,
+        y=roll_button_rect.bottom + 20
     )
 
     pygame.display.flip()
-    clock.tick(60)
-
-conn.close()
-pygame.quit()
