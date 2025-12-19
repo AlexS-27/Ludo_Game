@@ -97,7 +97,7 @@ def draw_sidebar(surface):
 
     # Bouton Dé
     btn = pygame.Rect(inner.left + 12, inner.top + 100, inner.width - 24, 45)
-    btn_color = (200, 200, 200) if game.rolled_dice is None else (100, 100, 100)
+    btn_color = (200, 200, 200) if (game.rolled_dice is None and not turn_transition) else (100, 100, 100)
     pygame.draw.rect(surface, btn_color, btn, border_radius=8)
     txt_btn = font_ui.render("LANCER LE DÉ" if not dice.animating else "ROLLING...", True, BLACK)
     surface.blit(txt_btn, (btn.centerx - txt_btn.get_width() // 2, btn.centery - txt_btn.get_height() // 2))
@@ -153,10 +153,17 @@ def world_to_cell(mx, my, left, top, cw, ch):
     row = (my - top) // ch
     return int(row), int(col)
 
+def start_turn_transition():
+    global turn_transition, turn_transition_start
+    turn_transition = True
+    turn_transition_start = pygame.time.get_ticks()
+
 # ================= MAIN LOOP =================
 run = True
 roll_button_rect = pygame.Rect(0, 0, 0, 0)
-skip_timer = 0
+turn_transition = False
+turn_transition_start = 0
+TURN_DELAY = 1500
 
 while run:
     # 1. Gestion des entrées
@@ -165,10 +172,13 @@ while run:
         if event.type == pygame.QUIT:
             run = False
 
+        if turn_transition:
+            continue
+
         if event.type == pygame.MOUSEBUTTONDOWN:
             # Clic sur le bouton de dé
             if roll_button_rect.collidepoint(mx, my):
-                if not dice.animating and game.rolled_dice is None:
+                if not dice.animating and game.rolled_dice is None and not turn_transition:
                     dice.start_animation()
 
             # Clic sur une case du plateau
@@ -185,12 +195,13 @@ while run:
                                      p.position is None and storage_cells.get((player.color, p.pawn_id))['row'] == r),
                                     None)
                         if pawn and game.try_to_release_pawn(pawn, game.rolled_dice):
-                            game.post_move_cleanup()
+                            start_turn_transition()
                     elif cell.id is not None:
                         pawns = game.get_pawns_on_cell(r, c)
                         pawn = next((p for p in pawns if p.player == player), None)
                         if pawn and game.try_to_move_pawn(pawn, game.rolled_dice):
-                            game.post_move_cleanup()
+                            game.set_message(f"Your pawn was moved to position {pawn.position}.")
+                            start_turn_transition()
 
     # 2. Mises à jour (Logic)
     dice.update()
@@ -201,22 +212,22 @@ while run:
 
         # if player cannot move
         if not game.can_player_move(game.rolled_dice):
-            if skip_timer == 0:
-                # start timer and display message
-                skip_timer = pygame.time.get_ticks()
-                game.set_message(
-                    f"{game.players[game.current_player_index].name} rolled {game.rolled_dice}: No moves possible!")
-
-            # wait 2 seconds
-            if pygame.time.get_ticks() - skip_timer > 1500:
-                game.next_player()
-                dice.result = None
-                skip_timer = 0
+            game.set_message(
+                f"{game.players[game.current_player_index].name} rolled {game.rolled_dice}: No moves possible!"
+            )
+            start_turn_transition()
+            dice.result = None
 
         # if player can move
         else:
             game.set_message(f"Rolled a {game.rolled_dice}! Select a pawn to move.")
             dice.result = None
+
+    if turn_transition:
+        if pygame.time.get_ticks() - turn_transition_start > TURN_DELAY:
+            game.set_message("Next player...")
+            game.post_move_cleanup()
+            turn_transition = False
 
     # 3. Dessin (Render)
     draw_gradient_background(screen)
