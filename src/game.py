@@ -5,10 +5,10 @@ from src.grid_and_board.cell import RED, GREEN, BLUE, YELLOW, NORMAL_HORIZONTAL,
 
 # Ces positions correspondent aux IDs générés dans grid_setup.py
 PLAYER_START_POSITIONS = {
-    "blue": 1,  # Départ Bleu
-    "red": 43,  # Départ Rouge (selon setup_game_path)
-    "green": 29,  # Départ Vert
-    "yellow": 15  # Départ Jaune
+    "blue": 13,  # Départ Bleu
+    "red": 52,  # Départ Rouge (selon setup_game_path)
+    "green": 39,  # Départ Vert
+    "yellow": 26  # Départ Jaune
 }
 
 ROLL_TO_RELEASE = 5
@@ -113,31 +113,69 @@ class Game:
         return True
 
     def try_to_move_pawn(self, pawn, dice_value):
-        """ Calcule et applique le mouvement d'un pion sur l'anneau """
-        if pawn.player != self.players[self.current_player_index]:
-            self.set_message("Not your turn / Not your pawn.")
+        if pawn.player != self.players[self.current_player_index] or pawn.position is None:
             return False
 
-        if pawn.position is None:
-            return False
+        current_pos = pawn.position
+        BIFURCATION_LOGIC = {
+            "red": {"exit_node": 51, "safe_start": 200},
+            "yellow": {"exit_node": 25, "safe_start": 300},
+            "green": {"exit_node": 38, "safe_start": 400},
+            "blue": {"exit_node": 12, "safe_start": 500}
+        }
 
-        # Logique de boucle sur l'anneau (1 à 56)
-        new_pos_id = pawn.position + dice_value
-        if new_pos_id > MAX_COMMON_PATH:
-            new_pos_id -= MAX_COMMON_PATH
+        logic = BIFURCATION_LOGIC[pawn.player.color]
+        last_cell_id = logic["safe_start"] + 4
 
-        # Vérifier si la case d'arrivée est occupée par soi-même
-        my_pawns_at_dest = [p for p in pawn.player.pawns if p.position == new_pos_id]
+        # --- LOGIQUE DE VICTOIRE IMMÉDIATE ---
+
+        # 1. Si le pion est déjà dans le safe path
+        if current_pos >= 200:
+            distance_to_finish = last_cell_id - current_pos
+            if dice_value >= distance_to_finish:
+                self._validate_pawn_finish(pawn)
+                return True
+            new_pos_id = current_pos + dice_value
+
+        # 2. Si le pion est sur l'anneau et s'approche de sa sortie
+        else:
+            # On calcule la position théorique
+            new_pos_id = current_pos + dice_value
+
+            # S'il dépasse son point de bifurcation
+            if current_pos <= logic["exit_node"] and new_pos_id > logic["exit_node"]:
+                steps_after_exit = new_pos_id - logic["exit_node"]
+                # Si le nombre de pas après la sortie atteint ou dépasse la fin du safe path (5 cases)
+                if steps_after_exit >= 5:
+                    self._validate_pawn_finish(pawn)
+                    return True
+                else:
+                    new_pos_id = logic["safe_start"] + (steps_after_exit - 1)
+
+            # Boucle normale sur l'anneau extérieur
+            elif new_pos_id > MAX_COMMON_PATH:
+                new_pos_id -= MAX_COMMON_PATH
+
+        # --- VÉRIFICATIONS STANDARDS ---
+        my_pawns_at_dest = [p for p in pawn.player.pawns if p.position == new_pos_id and p != pawn]
         if my_pawns_at_dest:
             self.set_message("Target cell is occupied by your own pawn.")
             return False
 
-        # Gérer la capture d'un pion adverse
         self.check_collision(new_pos_id)
-
         pawn.position = new_pos_id
-        self.set_message(f"Pawn moved to {new_pos_id}.")
+
+        # Cas où il tombe pile sur la dernière case via le mouvement normal
+        if pawn.position == last_cell_id:
+            self._validate_pawn_finish(pawn)
+
         return True
+
+    def _validate_pawn_finish(self, pawn):
+        """ Utilitaire pour sortir le pion et marquer le point """
+        pawn.is_finished = True
+        pawn.position = None  # Le pion n'est plus sur le plateau
+        self.set_message(f"Great! A {pawn.player.color} pawn has finished its journey!")
 
     def check_collision(self, position_id):
         """ Renvoie les pions adverses en storage s'ils sont sur la case d'arrivée """
