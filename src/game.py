@@ -55,6 +55,21 @@ class Game:
                         pawns_on_cell.append(pawn)
         return pawns_on_cell
 
+    def can_player_move(self, dice_value):
+        player = self.players[self.current_player_index]
+
+        for pawn in player.pawns:
+            if pawn.position is None:
+                if dice_value == ROLL_TO_RELEASE:
+                    start_pos_id = PLAYER_START_POSITIONS[player.color]
+                    for p in player.pawns:
+                        if not any(p.position == start_pos_id for p in player.pawns):
+                            return True
+            elif not pawn.is_finished:
+                return True
+
+        return False
+
     def next_player(self):
         """ Passe au joueur suivant, sauf si un 6 est tiré """
         if self.rolled_dice == 6:

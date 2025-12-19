@@ -155,6 +155,7 @@ def world_to_cell(mx, my, left, top, cw, ch):
 # ================= MAIN LOOP =================
 run = True
 roll_button_rect = pygame.Rect(0, 0, 0, 0)
+skip_timer = 0
 
 while run:
     # 1. Gestion des entrées
@@ -194,8 +195,20 @@ while run:
     dice.update()
     if not dice.animating and dice.result is not None and game.rolled_dice is None:
         game.rolled_dice = dice.result
-        game.set_message(f"Rolled a {game.rolled_dice}! Select a pawn.")
-        dice.result = None
+        if not game.can_player_move(game.rolled_dice):
+            game.set_message(f"Rolled a {game.rolled_dice}. No moves possible!")
+            if skip_timer == 0:
+                skip_timer = pygame.time.get_ticks()
+
+            if pygame.time.get_ticks() - skip_timer > 2000:  # Attend 2 seconde
+                game.next_player()
+                dice.result = None
+                skip_timer = 0
+            game.next_player()
+            dice.result = None
+        else:
+            game.set_message(f"Rolled a {game.rolled_dice}! Select a pawn.")
+            dice.result = None
 
     # 3. Dessin (Render)
     draw_gradient_background(screen)
