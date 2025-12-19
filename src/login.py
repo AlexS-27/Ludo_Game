@@ -26,6 +26,7 @@ FONT_LABEL = pygame.font.SysFont("Arial", 24)
 FONT_INPUT = pygame.font.SysFont("Arial", 28)
 
 def run_launcher():
+    result = False
     # --- Class: Button ---
     class Button:
         def __init__(self, x, y, width, height, text, callback):
@@ -148,8 +149,9 @@ def run_launcher():
                 newdata = CreateNewGameDB(newgame_entry_name, newgame_entry_password)
                 if newdata:
                     print("Création OK — fermeture du launcher.")
-                    nonlocal running
+                    nonlocal running, result
                     running = False
+                    result = True
                     return True
                 else:
                     print("CreateNewGameDB indique un échec (nom déjà utilisé ou erreur).")
@@ -166,8 +168,9 @@ def run_launcher():
             data = LoadGameDB(game_entry_name, game_entry_pass)
             if data:
                 print("Chargement OK — fermeture du launcher.")
-                nonlocal running
+                nonlocal running, result
                 running = False
+                result = True
                 return True
             else:
                 print("LoadGameDB indique un échec (pas trouvé / mauvais mot de passe).")
@@ -214,6 +217,7 @@ def run_launcher():
             for event in events:
                 if event.type == pygame.QUIT:
                     running = False
+                    result = False
 
                 # Handle Back Button everywhere except Main Menu
                 if current_state != "MENU":
@@ -275,7 +279,7 @@ def run_launcher():
         traceback.print_exc()
     finally:
         running = False
-        return True
+        return result
 
 if __name__ == "__main__":
     run_launcher()
