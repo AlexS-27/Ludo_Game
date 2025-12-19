@@ -224,6 +224,8 @@ while run:
         for cell in row_cells:
             cell.draw(screen, BOARD_LEFT, BOARD_TOP)
 
+    draw_entry_arrows(screen, 0, 0, 3, 0, 0, None, CELL_WIDTH, CELL_HEIGHT, "", BOARD_LEFT, BOARD_TOP)
+
     # Highlights
     hr, hc = world_to_cell(mx, my, BOARD_LEFT, BOARD_TOP, CELL_WIDTH, CELL_HEIGHT)
     if 0 <= hr < ROWS and 0 <= hc < COLS:

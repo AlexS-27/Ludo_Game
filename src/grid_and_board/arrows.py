@@ -55,41 +55,13 @@ def draw_entry_arrows(surface, start_row, start_col, base_width,
                       cell_width, cell_height,
                       direction,
                       offset_x, offset_y):
-    """
-    Dessine toutes les flèches d'arrivée du plateau Ludo.
-    Cette fonction encapsule toute la logique des flèches pour éviter
-    la duplication dans main.py.
-    """
     from src.grid_and_board.cell import RED, GREEN, BLUE, YELLOW
 
-    # RED → down
-    draw_wide_arrow(
-        surface, start_row=6, start_col=6, base_width=3,
-        end_row=7, end_col=7,
-        color=RED, cell_width=cell_width, cell_height=cell_height,
-        direction="down", offset_x=offset_x, offset_y=offset_y
-    )
-
-    # GREEN → right
-    draw_wide_arrow(
-        surface, start_row=6, start_col=6, base_width=3,
-        end_row=7, end_col=7,
-        color=GREEN, cell_width=cell_width, cell_height=cell_height,
-        direction="right", offset_x=offset_x, offset_y=offset_y
-    )
-
-    # YELLOW → up
-    draw_wide_arrow(
-        surface, start_row=8, start_col=6, base_width=3,
-        end_row=7, end_col=7,
-        color=YELLOW, cell_width=cell_width, cell_height=cell_height,
-        direction="up", offset_x=offset_x, offset_y=offset_y
-    )
-
-    # BLUE → left
-    draw_wide_arrow(
-        surface, start_row=6, start_col=8, base_width=3,
-        end_row=7, end_col=7,
-        color=BLUE, cell_width=cell_width, cell_height=cell_height,
-        direction="left", offset_x=offset_x, offset_y=offset_y
-    )
+    # Rouge (Haut vers Centre)
+    draw_wide_arrow(surface, 6, 6, 3, 7, 7, RED, cell_width, cell_height, "right", offset_x, offset_y)
+    # Vert (Bas vers Centre)
+    draw_wide_arrow(surface, 6, 6, 3, 7, 7, GREEN, cell_width, cell_height, "down", offset_x, offset_y)
+    # Jaune (Droite vers Centre)
+    draw_wide_arrow(surface, 6, 8, 3, 7, 7, YELLOW, cell_width, cell_height, "left", offset_x, offset_y)
+    # Bleu (Gauche vers Centre)
+    draw_wide_arrow(surface, 8, 6, 3, 7, 7, BLUE, cell_width, cell_height, "up", offset_x, offset_y)
