@@ -109,11 +109,37 @@ def draw_sidebar(surface):
     return btn
 
 
+def draw_dice_face(surface, x, y, value):
+    # Fond du dé
+    rect = pygame.Rect(x, y, 80, 80)
+    pygame.draw.rect(surface, WHITE, rect, border_radius=12)
+    pygame.draw.rect(surface, (50, 50, 50), rect, 2, border_radius=12)  # Bordure grise
+
+    # Positions relatives des points (x, y) dans le carré de 80x80
+    dot_pos = {
+        1: [(40, 40)],
+        2: [(20, 20), (60, 60)],
+        3: [(20, 20), (40, 40), (60, 60)],
+        4: [(20, 20), (20, 60), (60, 20), (60, 60)],
+        5: [(20, 20), (20, 60), (40, 40), (60, 20), (60, 60)],
+        6: [(20, 40), (60, 40), (20, 20), (20, 60), (60, 20), (60, 60)]
+    }
+
+    # Dessiner les points noirs
+    for (dx, dy) in dot_pos.get(value, []):
+        pygame.draw.circle(surface, (30, 30, 30), (x + dx, y + dy), 8)
+
 def draw_pawns(surface, grid, offset_x, offset_y, cell_w, cell_h):
+    import math
     pawn_radius = cell_w // 3
+    curr_player = game.players[game.current_player_index]
+
     for player in game.players:
         for pawn in player.pawns:
             if pawn.is_finished: continue
+
+            # 1. Calcul de la position (cx, cy)
+            cx, cy = None, None
 
             # Position sur le plateau
             if pawn.position is not None:
@@ -123,17 +149,38 @@ def draw_pawns(surface, grid, offset_x, offset_y, cell_w, cell_h):
                     cx = offset_x + c_col * cell_w + cell_w // 2
                     cy = offset_y + c_row * cell_h + cell_h // 2
 
-                    pygame.draw.circle(surface, COLOR_TO_PYGAME_COLOR[player.color], (cx, cy), pawn_radius)
-                    pygame.draw.circle(surface, BLACK, (cx, cy), pawn_radius, 2)
-
             # Position en storage
             else:
                 s_info = storage_cells.get((player.color, pawn.pawn_id))
                 if s_info:
                     cx = offset_x + s_info['col'] * cell_w + cell_w // 2
                     cy = offset_y + s_info['row'] * cell_h + cell_h // 2
-                    pygame.draw.circle(surface, COLOR_TO_PYGAME_COLOR[player.color], (cx, cy), pawn_radius - 5)
-                    pygame.draw.circle(surface, BLACK, (cx, cy), pawn_radius - 5, 1)
+
+            # Si on n'a pas pu trouver de position, on passe au pion suivant
+            if cx is None or cy is None:
+                continue
+
+            # 2. Logique de Highlight (Brillance)
+            if game.rolled_dice is not None and player == curr_player:
+                is_playable = False
+                # Sortie de storage (besoin d'un 5)
+                if pawn.position is None and game.rolled_dice == 5:
+                    is_playable = True
+                # Déplacement sur le plateau
+                elif pawn.position is not None:
+                    is_playable = True
+
+                if is_playable:
+                    # Effet de pulsation
+                    pulse = (math.sin(pygame.time.get_ticks() * 0.01) + 1) / 2
+                    # On dessine un cercle blanc brillant derrière le pion
+                    dark_glow = (40,40,40)
+                    pygame.draw.circle(surface, dark_glow, (cx, cy), pawn_radius + 4 * pulse, 3)
+
+            # 3. Dessin du pion physique
+            color = COLOR_TO_PYGAME_COLOR[player.color]
+            pygame.draw.circle(surface, color, (cx, cy), pawn_radius)
+            pygame.draw.circle(surface, BLACK, (cx, cy), pawn_radius, 2)  # Contour
 
 
 def handle_pawn_click(row, col):
@@ -178,10 +225,15 @@ while run:
 
                     # Si clic sur storage : tenter de sortir le pion
                     if cell.cell_type == STORAGE:
-                        # On cherche un pion du joueur actuel qui est encore en storage
-                        pawn = next((p for p in player.pawns if p.position is None), None)
-                        if pawn and game.try_to_release_pawn(pawn, game.rolled_dice):
-                            moved = True
+                        # On cherche le PREMIER pion qui est encore en réserve
+                        pawn_to_release = next((p for p in player.pawns if p.position is None and not p.is_finished),
+                                               None)
+                        if pawn_to_release:
+                            if game.try_to_release_pawn(pawn_to_release, game.rolled_dice):
+                                moved = True
+                            else:
+                                # Optionnel: message si la case de départ est bloquée
+                                game.set_message("Start cell is blocked!")
 
                     # Si clic sur une case de chemin : tenter de bouger le pion présent
                     elif cell.id is not None:
@@ -231,15 +283,38 @@ while run:
         pygame.draw.rect(screen, (255, 255, 255),
                          (BOARD_LEFT + hc * CELL_WIDTH, BOARD_TOP + hr * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT), 2)
 
+    if game.rolled_dice is not None:
+        hr, hc = world_to_cell(mx, my, BOARD_LEFT, BOARD_TOP, CELL_WIDTH, CELL_HEIGHT)
+        pawns_under_mouse = game.get_pawns_on_cell(hr, hc)
+
+        for p in pawns_under_mouse:
+            if p.player == game.players[game.current_player_index]:
+                # Calculer la position d'arrivée théorique
+                future_pos_id = p.position + game.rolled_dice
+                # ... (gérer le dépassement de 52) ...
+
+                future_cell = game.get_cell_by_position(future_pos_id)
+                if future_cell:
+                    fx = BOARD_LEFT + future_cell['col'] * CELL_WIDTH
+                    fy = BOARD_TOP + future_cell['row'] * CELL_HEIGHT
+                    # Dessiner un rectangle fantôme
+                    s = pygame.Surface((CELL_WIDTH, CELL_HEIGHT), pygame.SRCALPHA)
+
+                    # Récupère la couleur du joueur actuel
+                    p_color = COLOR_TO_PYGAME_COLOR[game.players[game.current_player_index].color]
+
+                    # Crée une version sombre (on divise les valeurs R, G, B par 2)
+                    dark_version = (p_color[0] // 2, p_color[1] // 2, p_color[2] // 2, 100)
+
+                    s.fill(dark_version)  # Blanc transparent
+                    screen.blit(s, (fx, fy))
+
     draw_pawns(screen, grid, BOARD_LEFT, BOARD_TOP, CELL_WIDTH, CELL_HEIGHT)
 
     # Affichage du dé visuel
     dice_x = roll_button_rect.centerx - 40
     dice_y = roll_button_rect.bottom + 50
-    # On dessine un rectangle pour le dé
-    pygame.draw.rect(screen, WHITE, (dice_x, dice_y, 80, 80), border_radius=10)
-    res_txt = font_dice.render(str(dice.current_display), True, BLACK)
-    screen.blit(res_txt, (dice_x + 40 - res_txt.get_width() // 2, dice_y + 40 - res_txt.get_height() // 2))
+    draw_dice_face(screen, dice_x, dice_y, dice.current_display)
 
     pygame.display.flip()
     clock.tick(FPS)

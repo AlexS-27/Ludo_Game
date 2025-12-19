@@ -57,25 +57,28 @@ class Game:
 
     # Dans src/game.py
 
+    # Dans src/game.py
+
     def can_player_move(self, dice_value):
         player = self.players[self.current_player_index]
+        start_pos_id = PLAYER_START_POSITIONS[player.color]
 
+        # 1. Vérifier si on peut sortir un pion du storage (si on a fait un 5)
+        if dice_value == ROLL_TO_RELEASE:
+            # Est-ce qu'il reste des pions dans la réserve ?
+            has_pawn_in_storage = any(p.position is None and not p.is_finished for p in player.pawns)
+            # Est-ce que la case de départ est libre (pas occupée par un de mes pions) ?
+            is_start_blocked_by_me = any(p.position == start_pos_id for p in player.pawns)
+
+            if has_pawn_in_storage and not is_start_blocked_by_me:
+                return True
+
+        # 2. Vérifier si on peut bouger un pion déjà sur le plateau
         for pawn in player.pawns:
-            if pawn.is_finished:
-                continue
-
-            # Cas 1 : Le pion est dans le storage
-            if pawn.position is None:
-                if dice_value == ROLL_TO_RELEASE:
-                    # Peut sortir si la case de départ n'est pas occupée par lui-même
-                    start_pos_id = PLAYER_START_POSITIONS[player.color]
-                    if not any(p.position == start_pos_id for p in player.pawns):
-                        return True
-
-            # Cas 2 : Le pion est déjà sur le plateau
-            else:
-                # Pour l'instant on retourne True, mais idéalement il faudrait vérifier
-                # si le mouvement ne dépasse pas la zone de victoire (Safe Path)
+            if pawn.position is not None and not pawn.is_finished:
+                # Ici on pourrait ajouter une vérification pour les Safe Paths
+                # (ex: ne pas dépasser la ligne d'arrivée), mais pour l'instant
+                # si le pion est sur le plateau, on considère qu'il peut bouger.
                 return True
 
         return False
