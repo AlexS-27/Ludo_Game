@@ -6,6 +6,8 @@ def create_grid(rows, cols, cell_width, cell_height):
     return grid
 
 def setup_home_and_storage(grid, colors):
+    storage_cells = {}
+
     # Zones home_area
     home_areas = {
         "RED": (0, 0),
@@ -14,23 +16,32 @@ def setup_home_and_storage(grid, colors):
         "GREEN": (9, 0)
     }
 
+    # Home areas
     for color_name, (base_r, base_c) in home_areas.items():
         for r in range(base_r, base_r + 6):
             for c in range(base_c, base_c + 6):
                 grid[r][c].cell_type = HOME_AREA
                 grid[r][c].color = colors[color_name]
 
-    # Cases de stockage dans home_area (4 par zone)
+    # Storage cells (4 par joueur)
     storage_offsets = [(1, 1), (1, 4), (4, 1), (4, 4)]
-    storage_id_counter = 100
+
     for color_name, (base_r, base_c) in home_areas.items():
-        for dr, dc in storage_offsets:
+        player_color = color_name.lower()  # "RED" → "red"
+
+        for pawn_id, (dr, dc) in enumerate(storage_offsets):
             r = base_r + dr
             c = base_c + dc
+
             grid[r][c].cell_type = STORAGE
-            grid[r][c].id = storage_id_counter
             grid[r][c].color = WHITE
-            storage_id_counter += 1
+
+            storage_cells[(player_color, pawn_id)] = {
+                "row": r,
+                "col": c
+            }
+
+    return storage_cells
 
 def setup_game_path(grid):
     # Chemin jouable (indexation 1 → 56)
