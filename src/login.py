@@ -66,6 +66,10 @@ def run_launcher():
             self.is_password = is_password
             self.active = False
             self.placeholder = placeholder
+        # To add possibility to 'tab' to change the box input
+        def set_active(self, value):
+            self.active = value
+            self.color = ACTIVE_BORDER if value else INACTIVE_BORDER
 
         def handle_event(self, event):
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -75,6 +79,10 @@ def run_launcher():
                 else:
                     self.active = False
                 self.color = ACTIVE_BORDER if self.active else INACTIVE_BORDER
+            # To make 'tab' not writing a caracter in the input
+            if event.type == pygame.KEYDOWN and self.active:
+                if event.key == pygame.K_TAB:
+                    return
 
             if event.type == pygame.KEYDOWN and self.active:
                 if event.key == pygame.K_RETURN:
@@ -218,6 +226,32 @@ def run_launcher():
                 if event.type == pygame.QUIT:
                     running = False
                     result = False
+                # to make tab change the input box we're writting in
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_TAB:
+                    if current_state == "NEW_GAME":
+
+                        if input_newgame_name.active:
+                            input_newgame_name.set_active(False)
+                            input_newgame_pass.set_active(True)
+
+                        elif input_newgame_pass.active:
+                            input_newgame_pass.set_active(False)
+                            input_newgame_players.set_active(True)
+
+                        elif input_newgame_players.active:
+                            input_newgame_players.set_active(False)
+                            input_newgame_name.set_active(True)
+
+                    if current_state == "LOAD_GAME":
+
+                        if input_loadgame_name.active:
+                            input_loadgame_name.set_active(False)
+                            input_loadgame_pass.set_active(True)
+
+                        elif input_loadgame_pass.active:
+                            input_loadgame_pass.set_active(False)
+                            input_loadgame_name.set_active(True)
+
 
                 # Handle Back Button everywhere except Main Menu
                 if current_state != "MENU":
