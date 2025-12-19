@@ -105,7 +105,7 @@ def draw_sidebar(surface):
     # Message de statut
     msg_color = (255, 100, 100) if "No moves" in game.message else (200, 200, 100)
     msg_wrapped = font_ui.render(game.message, True, (200, 200, 100))
-    surface.blit(msg_wrapped, (inner.left + 12, inner.top + 250))
+    surface.blit(msg_wrapped, (inner.left + 12, inner.top + 350))
 
     return btn
 
@@ -231,6 +231,8 @@ while run:
     for row_cells in grid:
         for cell in row_cells:
             cell.draw(screen, BOARD_LEFT, BOARD_TOP)
+
+    draw_entry_arrows(screen, 0, 0, 3, 0, 0, None, CELL_WIDTH, CELL_HEIGHT, "", BOARD_LEFT, BOARD_TOP)
 
     # Highlights
     hr, hc = world_to_cell(mx, my, BOARD_LEFT, BOARD_TOP, CELL_WIDTH, CELL_HEIGHT)
