@@ -158,57 +158,56 @@ roll_button_rect = pygame.Rect(0, 0, 0, 0)
 skip_timer = 0
 
 while run:
-    # 1. Gestion des entrées
     mx, my = pygame.mouse.get_pos()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
 
         if event.type == pygame.MOUSEBUTTONDOWN:
-            # Clic sur le bouton de dé
             if roll_button_rect.collidepoint(mx, my):
                 if not dice.animating and game.rolled_dice is None:
                     dice.start_animation()
 
-            # Clic sur une case du plateau
+            # --- LOGIQUE DE CLIC SUR PION (A COMPLETER) ---
             r, c = world_to_cell(mx, my, BOARD_LEFT, BOARD_TOP, CELL_WIDTH, CELL_HEIGHT)
             if 0 <= r < ROWS and 0 <= c < COLS:
                 if game.rolled_dice is not None and not dice.animating:
-                    # On utilise la fonction handle_pawn_click définie plus haut
                     player = game.players[game.current_player_index]
                     cell = grid[r][c]
+                    moved = False
 
-                    # Logique simplifiée intégrée ici pour le main
+                    # Si clic sur storage : tenter de sortir le pion
                     if cell.cell_type == STORAGE:
-                        pawn = next((p for p in player.pawns if
-                                     p.position is None and storage_cells.get((player.color, p.pawn_id))['row'] == r),
-                                    None)
+                        # On cherche un pion du joueur actuel qui est encore en storage
+                        pawn = next((p for p in player.pawns if p.position is None), None)
                         if pawn and game.try_to_release_pawn(pawn, game.rolled_dice):
-                            game.post_move_cleanup()
+                            moved = True
+
+                    # Si clic sur une case de chemin : tenter de bouger le pion présent
                     elif cell.id is not None:
-                        pawns = game.get_pawns_on_cell(r, c)
-                        pawn = next((p for p in pawns if p.player == player), None)
+                        pawns_on_cell = game.get_pawns_on_cell(r, c)
+                        pawn = next((p for p in pawns_on_cell if p.player == player), None)
                         if pawn and game.try_to_move_pawn(pawn, game.rolled_dice):
-                            game.post_move_cleanup()
+                            moved = True
+
+                    if moved:
+                        game.post_move_cleanup()  # Passe au joueur suivant une seule fois
 
     # 2. Mises à jour (Logic)
     dice.update()
-    if not dice.animating and dice.result is not None and game.rolled_dice is None:
+
+    # Correction ici : On ne traite le résultat du dé QUE lorsqu'il vient de s'arrêter
+    if not dice.animating and dice.result is not None:
         game.rolled_dice = dice.result
+        dice.result = None  # ON VIDE dice.result IMMEDIATEMENT pour ne pas repasser ici
+
+        # Vérifier si le joueur est bloqué
         if not game.can_player_move(game.rolled_dice):
             game.set_message(f"Rolled a {game.rolled_dice}. No moves possible!")
-            if skip_timer == 0:
-                skip_timer = pygame.time.get_ticks()
-
-            if pygame.time.get_ticks() - skip_timer > 2000:  # Attend 2 seconde
-                game.next_player()
-                dice.result = None
-                skip_timer = 0
+            # On pourrait ajouter un timer ici, mais pour tester, passons direct :
             game.next_player()
-            dice.result = None
         else:
             game.set_message(f"Rolled a {game.rolled_dice}! Select a pawn.")
-            dice.result = None
 
     # 3. Dessin (Render)
     draw_gradient_background(screen)

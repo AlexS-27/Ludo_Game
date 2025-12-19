@@ -55,17 +55,27 @@ class Game:
                         pawns_on_cell.append(pawn)
         return pawns_on_cell
 
+    # Dans src/game.py
+
     def can_player_move(self, dice_value):
         player = self.players[self.current_player_index]
 
         for pawn in player.pawns:
+            if pawn.is_finished:
+                continue
+
+            # Cas 1 : Le pion est dans le storage
             if pawn.position is None:
                 if dice_value == ROLL_TO_RELEASE:
+                    # Peut sortir si la case de départ n'est pas occupée par lui-même
                     start_pos_id = PLAYER_START_POSITIONS[player.color]
-                    for p in player.pawns:
-                        if not any(p.position == start_pos_id for p in player.pawns):
-                            return True
-            elif not pawn.is_finished:
+                    if not any(p.position == start_pos_id for p in player.pawns):
+                        return True
+
+            # Cas 2 : Le pion est déjà sur le plateau
+            else:
+                # Pour l'instant on retourne True, mais idéalement il faudrait vérifier
+                # si le mouvement ne dépasse pas la zone de victoire (Safe Path)
                 return True
 
         return False
