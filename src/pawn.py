@@ -1,20 +1,20 @@
+# src/pawn.py
 class Pawn:
     def __init__(self, player, pawn_id):
         self.player = player
         self.pawn_id = pawn_id
-        self.position = None # none == in reserve, integer == in play, is_finished = true == finished
+        # position = None (en réserve), position = integer (sur plateau/safe path), is_finished = true (terminé)
+        self.position = None
         self.is_finished = False
 
-    # function to place the pawn on its starting square
     def enter_board(self, board):
-        # self.position = board.get_starting_position(self.player.color)
-        self.position = 0 # temporary
+        # Cette fonction sera gérée par Game.try_to_release_pawn
+        pass
 
     def can_move(self, steps, board):
-        # check if the pawn can move, logic to be defined later on
+        # Vérification complexe à implémenter, on le laisse dans Game pour l'instant
         return True
 
     def move(self, steps, board):
-        if self.can_move(steps, board):
-            # movement logic to be defined later on
-            pass
+        # Mouvement géré par Game.try_to_move_pawn
+        pass
