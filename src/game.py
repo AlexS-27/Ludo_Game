@@ -73,11 +73,13 @@ class Game:
     def next_player(self):
         """ Passe au joueur suivant, sauf si un 6 est tiré """
         if self.rolled_dice == 6:
-            self.set_message(f"{self.players[self.current_player_index].name} rolled a 6! Play again.")
+            self.rolled_dice = None
+            self.set_message(f"{self.players[self.current_player_index].name} rolled a 6! Extra turn for {self.players[self.current_player_index].name}.")
         else:
             self.current_player_index = (self.current_player_index + 1) % len(self.players)
+            self.rolled_dice = None
             curr = self.players[self.current_player_index]
-            self.set_message(f"It's {curr.name} ({curr.color})'s turn.")
+            self.set_message(f"It's {curr.name} ({curr.color})'s turn. Roll the dice !")
 
         self.rolled_dice = None
 
@@ -99,7 +101,7 @@ class Game:
         self.check_collision(start_pos_id)
 
         pawn.position = start_pos_id
-        self.set_message(f"Pawn released to position {start_pos_id}!")
+        self.set_message(f"Success ! Pawn released.")
         return True
 
     def try_to_move_pawn(self, pawn, dice_value):
@@ -126,7 +128,7 @@ class Game:
         self.check_collision(new_pos_id)
 
         pawn.position = new_pos_id
-        self.set_message(f"Pawn moved to {new_pos_id}.")
+        self.set_message(f"Moved {dice_value} spaces.")
         return True
 
     def check_collision(self, position_id):

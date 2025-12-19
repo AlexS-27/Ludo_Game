@@ -103,6 +103,7 @@ def draw_sidebar(surface):
     surface.blit(txt_btn, (btn.centerx - txt_btn.get_width() // 2, btn.centery - txt_btn.get_height() // 2))
 
     # Message de statut
+    msg_color = (255, 100, 100) if "No moves" in game.message else (200, 200, 100)
     msg_wrapped = font_ui.render(game.message, True, (200, 200, 100))
     surface.blit(msg_wrapped, (inner.left + 12, inner.top + 250))
 
@@ -193,21 +194,28 @@ while run:
 
     # 2. Mises à jour (Logic)
     dice.update()
-    if not dice.animating and dice.result is not None and game.rolled_dice is None:
-        game.rolled_dice = dice.result
-        if not game.can_player_move(game.rolled_dice):
-            game.set_message(f"Rolled a {game.rolled_dice}. No moves possible!")
-            if skip_timer == 0:
-                skip_timer = pygame.time.get_ticks()
 
-            if pygame.time.get_ticks() - skip_timer > 2000:  # Attend 2 seconde
+    if not dice.animating and dice.result is not None:
+        if game.rolled_dice is None:
+            game.rolled_dice = dice.result
+
+        # if player cannot move
+        if not game.can_player_move(game.rolled_dice):
+            if skip_timer == 0:
+                # start timer and display message
+                skip_timer = pygame.time.get_ticks()
+                game.set_message(
+                    f"{game.players[game.current_player_index].name} rolled {game.rolled_dice}: No moves possible!")
+
+            # wait 2 seconds
+            if pygame.time.get_ticks() - skip_timer > 2000:
                 game.next_player()
                 dice.result = None
                 skip_timer = 0
-            game.next_player()
-            dice.result = None
+
+        # if player can move
         else:
-            game.set_message(f"Rolled a {game.rolled_dice}! Select a pawn.")
+            game.set_message(f"Rolled a {game.rolled_dice}! Select a pawn to move.")
             dice.result = None
 
     # 3. Dessin (Render)
