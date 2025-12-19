@@ -58,10 +58,10 @@ def draw_entry_arrows(surface, start_row, start_col, base_width,
     from src.grid_and_board.cell import RED, GREEN, BLUE, YELLOW
 
     # Rouge (Haut vers Centre)
-    draw_wide_arrow(surface, 6, 6, 3, 7, 7, RED, cell_width, cell_height, "right", offset_x, offset_y)
+    draw_wide_arrow(surface, 6, 6, 3, 7, 7, GREEN, cell_width, cell_height, "right", offset_x, offset_y)
     # Vert (Bas vers Centre)
-    draw_wide_arrow(surface, 6, 6, 3, 7, 7, GREEN, cell_width, cell_height, "down", offset_x, offset_y)
+    draw_wide_arrow(surface, 6, 6, 3, 7, 7, RED, cell_width, cell_height, "down", offset_x, offset_y)
     # Jaune (Droite vers Centre)
-    draw_wide_arrow(surface, 6, 8, 3, 7, 7, YELLOW, cell_width, cell_height, "left", offset_x, offset_y)
+    draw_wide_arrow(surface, 6, 8, 3, 7, 7, BLUE, cell_width, cell_height, "left", offset_x, offset_y)
     # Bleu (Gauche vers Centre)
-    draw_wide_arrow(surface, 8, 6, 3, 7, 7, BLUE, cell_width, cell_height, "up", offset_x, offset_y)
+    draw_wide_arrow(surface, 8, 6, 3, 7, 7, YELLOW, cell_width, cell_height, "up", offset_x, offset_y)

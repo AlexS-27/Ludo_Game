@@ -104,7 +104,7 @@ def draw_sidebar(surface):
 
     # Message de statut
     msg_wrapped = font_ui.render(game.message, True, (200, 200, 100))
-    surface.blit(msg_wrapped, (inner.left + 12, inner.top + 250))
+    surface.blit(msg_wrapped, (inner.left + 12, inner.top + 350))
 
     return btn
 
