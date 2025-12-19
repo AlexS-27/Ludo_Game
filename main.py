@@ -1,12 +1,14 @@
 # main.py
 import pygame
-from src.grid_and_board.cell import RED, GREEN, BLUE, YELLOW, WHITE, BLACK, Cell, BORDER
+from src.grid_and_board.cell import RED, GREEN, BLUE, YELLOW, WHITE, BLACK, Cell, BORDER, STORAGE, HOME_AREA, NORMAL_HORIZONTAL, NORMAL_VERTICAL, SAFE_PATH
 from src.grid_and_board.board import color_ludo
 from src.grid_and_board.arrows import draw_entry_arrows
 from src.grid_and_board.grid_setup import create_grid, setup_home_and_storage, setup_game_path
 from src.dice_role import Dice
 from src.linkwithdatabase import get_connection
 from src.login import run_launcher
+from src.game import Game
+from src.player import Player
 
 # --- Setup DB ---
 custom_path = "./docs/Database/ludo.db"
@@ -27,15 +29,25 @@ pygame.display.set_caption("Ludo Game")
 ROWS, COLS = 15, 15
 CELL_WIDTH, CELL_HEIGHT = 50, 50
 colors = {"RED": RED, "BLUE": BLUE, "YELLOW": YELLOW, "GREEN": GREEN}
+COLOR_TO_PYGAME_COLOR = {"red": RED, "blue": BLUE, "yellow": YELLOW, "green": GREEN}
 
 # Initialize grid
 grid = create_grid(ROWS, COLS, CELL_WIDTH, CELL_HEIGHT)
 # Apply coloring (board.py)
 color_ludo(grid)
 # Setup home areas and storage cells
-setup_home_and_storage(grid, colors)
+storage_cells = setup_home_and_storage(grid, colors)
 # Setup paths
-setup_game_path(grid)
+game_path_length = setup_game_path(grid)
+
+# game initialization
+players = [Player("Player 1", 1),
+           Player("Player 2", 2),
+           Player("Player 3", 3),
+           Player("Player 4", 4)]
+game = Game(players, grid, game_path_length)
+dice = Dice()
+font = pygame.font.Font(None, 80)
 
 # UI layout constants
 SIDEBAR_W = 300
@@ -83,18 +95,33 @@ def draw_header(surface, title="Ludo Game"):
 def draw_sidebar(surface):
     w = SIDEBAR_W
     rect = pygame.Rect(surface.get_width() - w, HEADER_H, w, surface.get_height() - HEADER_H)
+
     # panel background
     pygame.draw.rect(surface, (14, 14, 18), rect, border_radius=12)
+
     # inner card
     inner = rect.inflate(-18, -18)
     pygame.draw.rect(surface, (22, 22, 26), inner, border_radius=10)
+
     # content: title + placeholders
     f = pygame.font.SysFont("Segoe UI", 18, bold=True)
     t = f.render("Game Panel", True, WHITE)
     surface.blit(t, (inner.left + 12, inner.top + 12))
+
+    # displaying active player
+    current_player_name = game.players[game.current_player_index].name
+    current_player_color = game.players[game.current_player_index].color
+
     sf = pygame.font.SysFont("Segoe UI", 14)
-    surface.blit(sf.render("Joueur actif: Rouge", True, (200, 200, 200)), (inner.left + 12, inner.top + 44))
-    # button placeholder
+    player_text = sf.render(f"Active player: {current_player_name}", True, (200, 200, 200))
+    surface.blit(player_text, (inner.left + 12, inner.top + 44))
+
+    # color indicator
+    color_rect = pygame.Rect(inner.left + 12 + player_text.get_width() + 8, inner.top + 44, 16, 16)
+    pygame.draw.rect(surface, COLOR_TO_PYGAME_COLOR.get(current_player_color, WHITE), color_rect, border_radius=4)
+    pygame.draw.rect(surface, BLACK, color_rect, 1, border_radius=4)
+
+    # dice button
     btn = pygame.Rect(inner.left + 12, inner.top + 80, inner.width - 24, 40)
     pygame.draw.rect(surface, (255, 255, 255), btn, border_radius=8)
     pygame.draw.rect(surface, (12, 12, 12), btn, 2, border_radius=8)
@@ -130,9 +157,91 @@ screen = pygame.display.set_mode((1400, 900), pygame.RESIZABLE)
 pygame.display.set_caption("Ludo Game")
 
 
+# with AI
+def draw_pawns(surface, grid, offset_x, offset_y, cell_w, cell_h):
+    pawn_radius = cell_w // 4
+
+    for player in game.players:
+        for pawn in player.pawns:
+            if pawn.position is not None and not pawn.is_finished:
+                cell_info = game.get_cell_by_position(pawn.position)
+                if cell_info is None:
+                    continue
+
+                cell = cell_info['cell']
+
+                # cell center coordinates
+                center_x = offset_x + cell.col * cell_w + cell_w // 2
+                center_y = offset_y + cell.row * cell_h + cell_h // 2
+
+                # check if multiple pawns are on the same cell
+                pawns_on_cell = game.get_pawns_on_cell(cell.row, cell.col)
+                num_pawns = len(pawns_on_cell)
+
+                # to be implemented later: drawing multiple pawns next to each other
+                pawn_color = COLOR_TO_PYGAME_COLOR.get(player.color)
+
+                pygame.draw.circle(surface, pawn_color, (center_x, center_y), pawn_radius)
+                pygame.draw.circle(surface, BLACK, (center_x, center_y), pawn_radius, 1)
+
+            elif pawn.position is None and not pawn.is_finished:
+                # the pawn is in storage
+                storage_cell_info = storage_cells.get((player.color, pawn.pawn_id))
+                if storage_cell_info:
+                    r, c = storage_cell_info['row'], storage_cell_info['col']
+                    cell = grid[r][c]
+                    center_x = offset_x + cell.col * cell_w + cell_w // 2
+                    center_y = offset_y + cell.row * cell_h + cell_h // 2
+
+                    pawn_color = COLOR_TO_PYGAME_COLOR.get(player.color)
+
+                    storage_index = pawn.pawn_id
+
+                    offsets = [(-pawn_radius, -pawn_radius), (pawn_radius, -pawn_radius),
+                               (-pawn_radius, pawn_radius), (pawn_radius, pawn_radius)]
+
+                    dx, dy = offsets[storage_index]
+
+                    pygame.draw.circle(surface, pawn_color, (center_x + dx // 2, center_y + dy // 2), pawn_radius - 2)
+                    pygame.draw.circle(surface, BLACK, (center_x + dx // 2, center_y + dy // 2), pawn_radius - 2, 1)
+
+
+# with AI
+def handle_pawn_click(row, col):
+    if game.rolled_dice is None:
+        game.set_message("Please roll the dice first.")
+        return
+
+    player = game.players[game.current_player_index]
+    cell = grid[row][col]
+    if cell.cell_type == STORAGE:
+        pawn_to_move = next((p for p in player.pawns
+                             if p.position is None and
+                             not p.is_finished and
+                             storage_cells.get((player.color, p.pawn_id), {}).get('row') == row and
+                             storage_cells.get((player.color, p.pawn_id), {}).get('col') == col), None)
+        if pawn_to_move:
+            if game.try_to_release_pawn(pawn_to_move, game.rolled_dice):
+                game.post_move_cleanup()
+            else:
+                game.set_message(f"You need a 5 to get the pawn out of storage, not a {game.rolled_dice}")
+        else:
+            game.set_message("This is not your in-storage pawn.")
+
+    elif cell.id is not None and cell.cell_type not in [HOME_AREA]:
+        pawns_on_cell = game.get_pawns_on_cell(row, col)
+        pawn_to_move = next((p for p in pawns_on_cell if p.player.color == player.color), None)
+        if pawn_to_move:
+            if game.try_to_move_pawn(pawn_to_move, game.rolled_dice):
+                game.post_move_cleanup()
+            else:
+                game.set_message("None of your pawns on this cell are playable.")
+        else:
+            game.set_message("Non-playble cell, or no pawn to select.")
+
+
 # Main loop
 run = True
-clock = pygame.time.Clock()
 
 while run:
 
@@ -146,10 +255,10 @@ while run:
     # Event handling
     events = pygame.event.get()
     for event in events:
-        #quit pygame
+        # quit pygame
         if event.type == pygame.QUIT:
             run = False
-        #React to resize
+        # React to resize
         if event.type == pygame.VIDEORESIZE:
             screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
 
@@ -160,10 +269,34 @@ while run:
                 print("🎲 Bouton cliqué !")
                 dice.start_animation()
             # translate coords to board-local
+"""
+            # Click on the dice button
+            if dice_btn_rect and dice_btn_rect.collidepoint(mx, my):
+                if not dice.animating and game.rolled_dice is None:
+                    # Roll the dice, begin animation
+                    dice.start_animation()
+                    game.set_message("Dice rolled !")
+                    # Result will be updated in dice.update() and fetched here after the animation
+                elif game.rolled_dice is not None:
+                    # If the dice was already rolled, then the button is useless. Wait on pawn select click.
+                    game.set_message("Select a pwan to move.")
+"""
+            # Click on the board
             row, col = world_to_cell(mx, my, BOARD_LEFT, BOARD_TOP, CELL_WIDTH, CELL_HEIGHT)
             if 0 <= row < ROWS and 0 <= col < COLS:
                 clicked_cell = grid[row][col]
-                print(f"Case cliquée: ID={clicked_cell.id}, Type={clicked_cell.cell_type}, RowCol=({row},{col})")
+                # print(f"Cell clicked: ID={clicked_cell.id}, Type={clicked_cell.cell_type}, RowCol=({row},{col})")
+
+                # If the dice was rolled, try to move a pawn
+                if game.rolled_dice is not None and not dice.animating:
+                    handle_pawn_click(row, col)
+
+    # After the dice finished the animation, update the result in-game
+    if not dice.animating and dice.result is not None and game.rolled_dice is None:
+        game.rolled_dice = dice.result
+        game.set_message(f"Dice roll: {game.rolled_dice}. Select a pawn.")
+        # Reset dice object for next turn
+        dice.result = None
 
     # hover tracking
     mx, my = pygame.mouse.get_pos()
@@ -206,8 +339,11 @@ while run:
     if clicked_cell:
         rect = pygame.Rect(BOARD_LEFT + clicked_cell.col * CELL_WIDTH, BOARD_TOP + clicked_cell.row * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT)
         pygame.draw.rect(screen, (255, 255, 255), rect, 2, border_radius=8)
-    #Draw arrow
-    # Draw arrival arrows
+
+    # Draw pawns
+    draw_pawns(screen, grid, BOARD_LEFT, BOARD_TOP, CELL_WIDTH, CELL_HEIGHT)
+
+    # Draw arrow (une seule pour l'exemple)
     draw_entry_arrows(
         screen,
         start_row=6, start_col=6, base_width=3,
