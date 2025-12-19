@@ -68,34 +68,107 @@ def setup_home_and_storage(grid, colors):
 
 def setup_game_path(grid):
     # Chemin jouable (indexation 1 → 56)
-    # ... (le reste de la fonction est inchangé, assurez-vous que le compteur final est 56) ...
-    # Le reste du code de cette fonction est inchangé, il retourne game_id_counter qui est 57 si 56 cases sont créées (la dernière étant 56)
     game_id_counter = 1
-
-    # ... (toute la logique de création des chemins) ...
 
     # Chemin horizontal en haut
     for c in range(6, 9):
         grid[0][c].cell_type = NORMAL_HORIZONTAL
         grid[0][c].id = game_id_counter
         game_id_counter += 1
-    # ... (le reste du chemin principal) ...
 
-    # Chemin horizontal rouge (la dernière du chemin principal est 56)
+    # Chemin vertical bleu
+    for r in range(1, 6):
+        grid[r][8].cell_type = NORMAL_VERTICAL
+        grid[r][8].id = game_id_counter
+        game_id_counter += 1
+
+    # Chemin horizontal bleu
+    for c in range(9, 15):
+        grid[6][c].cell_type = NORMAL_HORIZONTAL
+        grid[6][c].id = game_id_counter
+        game_id_counter += 1
+
+    # Chemin vertical droite
+    for r in range(7, 9):
+        grid[r][14].cell_type = NORMAL_VERTICAL
+        grid[r][14].id = game_id_counter
+        game_id_counter += 1
+
+    # Chemin horizontal jaune
+    for c in range(13, 8, -1):
+        grid[8][c].cell_type = NORMAL_HORIZONTAL
+        grid[8][c].id = game_id_counter
+        game_id_counter += 1
+
+    # Chemin vertical jaune
+    for r in range(9, 14):
+        grid[r][8].cell_type = NORMAL_VERTICAL
+        grid[r][8].id = game_id_counter
+        game_id_counter += 1
+
+    # Chemin horizontal bas
+    for c in range(8, 5, -1):
+        grid[14][c].cell_type = NORMAL_HORIZONTAL
+        grid[14][c].id = game_id_counter
+        game_id_counter += 1
+
+    # Chemin vertical vert
+    for r in range(13, 8, -1):
+        grid[r][6].cell_type = NORMAL_VERTICAL
+        grid[r][6].id = game_id_counter
+        game_id_counter += 1
+
+    # Chemin horizontal vert
+    for c in range(5, 0, -1):
+        grid[8][c].cell_type = NORMAL_HORIZONTAL
+        grid[8][c].id = game_id_counter
+        game_id_counter += 1
+
+    # Chemin vertical gauche
+    for r in range(8, 5, -1):
+        grid[r][0].cell_type = NORMAL_VERTICAL
+        grid[r][0].id = game_id_counter
+        game_id_counter += 1
+
+    # Chemin horizontal rouge
     for c in range(1, 6):
         grid[6][c].cell_type = NORMAL_HORIZONTAL
         grid[6][c].id = game_id_counter
         game_id_counter += 1
 
-    # Chemin vertical rouge (la dernière est 56)
+    # Chemin vertical rouge
     for r in range(5, 0, -1):
         grid[r][6].cell_type = NORMAL_VERTICAL
         grid[r][6].id = game_id_counter
         game_id_counter += 1
 
-    # Le compteur doit être 57 après 56 cases jouables.
-
     # Safe paths (chemins finaux vers le centre) - identifiants 200,300,400,500
-    # ... (reste inchangé) ...
+    # Rouge (monte vers le centre) : (r=1..5, c=7)
+    safe_id = 200
+    for r in range(1, 6):
+        grid[r][7].cell_type = SAFE_PATH
+        grid[r][7].id = safe_id
+        safe_id += 1
+
+    # Jaune (descend vers le centre) : (r=9..13, c=7)
+    safe_id = 300
+    for r in range(13, 8, -1):
+        grid[r][7].cell_type = SAFE_PATH
+        grid[r][7].id = safe_id
+        safe_id += 1
+
+    # Vert (va vers la droite) : (r=7, c=1..5)
+    safe_id = 400
+    for c in range(1, 6):
+        grid[7][c].cell_type = SAFE_PATH
+        grid[7][c].id = safe_id
+        safe_id += 1
+
+    # Bleu (va vers la gauche) : (r=7, c=9..13)
+    safe_id = 500
+    for c in range(13, 8, -1):
+        grid[7][c].cell_type = SAFE_PATH
+        grid[7][c].id = safe_id
+        safe_id += 1
 
     return game_id_counter - 1  # Retourne la longueur du chemin (56)
