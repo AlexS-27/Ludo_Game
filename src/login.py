@@ -27,6 +27,7 @@ FONT_LABEL = pygame.font.SysFont("Arial", 24)
 FONT_INPUT = pygame.font.SysFont("Arial", 28)
 
 def run_launcher():
+    final_game_name = None
     # --- Class: Button ---
     class Button:
         def __init__(self, x, y, width, height, text, callback):
@@ -151,7 +152,8 @@ def run_launcher():
             newdata = CreateNewGameDB(newgame_entry_name, newgame_entry_password)
             if newdata:
                 print("Création OK — fermeture du launcher.")
-                nonlocal running
+                nonlocal running, final_game_name
+                final_game_name = newgame_entry_name
                 running = False
                 return game, True
             else:
@@ -170,7 +172,8 @@ def run_launcher():
             game = json_util.load_game(game_entry_name)
             if data:
                 print("Chargement OK — fermeture du launcher.")
-                nonlocal running
+                nonlocal running, final_game_name
+                final_game_name = game_entry_name
                 running = False
                 return game, True
             else:
@@ -280,7 +283,7 @@ def run_launcher():
         traceback.print_exc()
     finally:
         running = False
-        return True
+        return final_game_name,True
 
 if __name__ == "__main__":
     run_launcher()

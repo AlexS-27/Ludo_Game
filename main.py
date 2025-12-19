@@ -146,7 +146,7 @@ def world_to_cell(mx, my, left, top, cw, ch):
     return int(row), int(col)
 
 # --- LOGIN LOOP ---
-connected = run_launcher()
+connected,game_name = run_launcher()
 
 if not connected:
     pygame.quit()
@@ -235,11 +235,15 @@ def handle_pawn_click(row, col):
         if pawn_to_move:
             if game.try_to_move_pawn(pawn_to_move, game.rolled_dice):
                 game.post_move_cleanup()
+                move_successful = True
             else:
                 game.set_message("None of your pawns on this cell are playable.")
         else:
             game.set_message("Non-playble cell, or no pawn to select.")
 
+    if move_successful:
+        print(f"Mouvement validé. Sauvegarde dans {game_name}.json...")
+        save_game(game, game_name)
 
 # Main loop
 run = True
@@ -247,8 +251,6 @@ run = True
 while run:
     dt = clock.tick(FPS) / 1000.0
     pulse_t += dt
-
-    save_game(game, game_name="")
     # ================= EVENTS =================
     for event in pygame.event.get():
         if event.type == pygame.QUIT:

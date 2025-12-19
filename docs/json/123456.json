@@ -1,0 +1,112 @@
+{
+    "players": [
+        {
+            "name": "Player 1",
+            "color": "blue",
+            "pawns": [
+                {
+                    "pawn_id": 0,
+                    "position": null,
+                    "is_finished": false
+                },
+                {
+                    "pawn_id": 1,
+                    "position": null,
+                    "is_finished": false
+                },
+                {
+                    "pawn_id": 2,
+                    "position": null,
+                    "is_finished": false
+                },
+                {
+                    "pawn_id": 3,
+                    "position": null,
+                    "is_finished": false
+                }
+            ]
+        },
+        {
+            "name": "Player 2",
+            "color": "red",
+            "pawns": [
+                {
+                    "pawn_id": 0,
+                    "position": null,
+                    "is_finished": false
+                },
+                {
+                    "pawn_id": 1,
+                    "position": null,
+                    "is_finished": false
+                },
+                {
+                    "pawn_id": 2,
+                    "position": null,
+                    "is_finished": false
+                },
+                {
+                    "pawn_id": 3,
+                    "position": null,
+                    "is_finished": false
+                }
+            ]
+        },
+        {
+            "name": "Player 3",
+            "color": "green",
+            "pawns": [
+                {
+                    "pawn_id": 0,
+                    "position": null,
+                    "is_finished": false
+                },
+                {
+                    "pawn_id": 1,
+                    "position": null,
+                    "is_finished": false
+                },
+                {
+                    "pawn_id": 2,
+                    "position": null,
+                    "is_finished": false
+                },
+                {
+                    "pawn_id": 3,
+                    "position": null,
+                    "is_finished": false
+                }
+            ]
+        },
+        {
+            "name": "Player 4",
+            "color": "yellow",
+            "pawns": [
+                {
+                    "pawn_id": 0,
+                    "position": null,
+                    "is_finished": false
+                },
+                {
+                    "pawn_id": 1,
+                    "position": null,
+                    "is_finished": false
+                },
+                {
+                    "pawn_id": 2,
+                    "position": null,
+                    "is_finished": false
+                },
+                {
+                    "pawn_id": 3,
+                    "position": null,
+                    "is_finished": false
+                }
+            ]
+        }
+    ],
+    "current_player_index": 0,
+    "grid": [],
+    "game_path_length": 52,
+    "is_over": false
+}
