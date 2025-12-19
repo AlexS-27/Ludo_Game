@@ -9,6 +9,7 @@ from src.linkwithdatabase import get_connection
 from src.login import run_launcher
 from src.game import Game
 from src.player import Player
+from src.json import save_game
 
 # --- Setup DB ---
 custom_path = "./docs/Database/ludo.db"
@@ -247,6 +248,7 @@ while run:
     dt = clock.tick(FPS) / 1000.0
     pulse_t += dt
 
+    save_game(game, game_name="")
     # ================= EVENTS =================
     for event in pygame.event.get():
         if event.type == pygame.QUIT:

@@ -4,7 +4,8 @@ import pygame
 import sys
 import traceback
 from src.linkwithdatabase import LoadGameDB, CreateNewGameDB
-
+from src.json import save_game, load_game, create_game
+import src.json as json_util
 # --- Initialization ---
 pygame.init()
 screen = pygame.display.set_mode((1400, 800)
@@ -122,9 +123,8 @@ def run_launcher():
         current_state = "MENU"
 
     def action_create():
-        nbr_player_text = input_newgame_players.text.strip()
+        """nbr_player_text = input_newgame_players.text.strip()
         if nbr_player_text == "":
-            # valeur par défaut si vide (optionnel : tu peux forcer l'utilisateur à saisir)
             nbr_player = 1
         else:
             # tenter de convertir en entier pour gérer les erreurs
@@ -137,25 +137,28 @@ def run_launcher():
         # Vérifier la plage autorisée (entre 1 et 4 joueurs)
         if nbr_player < 1 or nbr_player > 4:
             print("Le nombre de joueurs doit être entre 1 et 4.")
-            return False
-        else:
-            print("--- Creating Game ---")
-            print(f"Name: {input_newgame_name.text}")
-            print(f"Players: {input_newgame_players.text}")
-            newgame_entry_name = input_newgame_name.text
-            newgame_entry_password = input_newgame_pass.text
-            try:
-                newdata = CreateNewGameDB(newgame_entry_name, newgame_entry_password)
-                if newdata:
-                    print("Création OK — fermeture du launcher.")
-                    nonlocal running
-                    running = False
-                    return True
-                else:
-                    print("CreateNewGameDB indique un échec (nom déjà utilisé ou erreur).")
-            except Exception:
-                print("Error in CreateNewGameDB:")
-                traceback.print_exc()
+            return False"""
+        nbr_player = 4
+        print("--- Creating Game ---")
+        print(f"Name: {input_newgame_name.text}")
+        print(f"Players: {4}")
+        newgame_entry_name = input_newgame_name.text
+        newgame_entry_password = input_newgame_pass.text
+        try:
+            player_count = nbr_player
+            player_names = [f"Player {i + 1}" for i in range(player_count)]
+            game = json_util.create_game(newgame_entry_name, player_names)
+            newdata = CreateNewGameDB(newgame_entry_name, newgame_entry_password)
+            if newdata:
+                print("Création OK — fermeture du launcher.")
+                nonlocal running
+                running = False
+                return game, True
+            else:
+                print("CreateNewGameDB indique un échec (nom déjà utilisé ou erreur).")
+        except Exception:
+            print("Error in CreateNewGameDB:")
+            traceback.print_exc()
 
     def action_load():
         print("--- Loading Game ---")
@@ -164,11 +167,12 @@ def run_launcher():
         game_entry_pass = input_loadgame_pass.text
         try:
             data = LoadGameDB(game_entry_name, game_entry_pass)
+            game = json_util.load_game(game_entry_name)
             if data:
                 print("Chargement OK — fermeture du launcher.")
                 nonlocal running
                 running = False
-                return True
+                return game, True
             else:
                 print("LoadGameDB indique un échec (pas trouvé / mauvais mot de passe).")
         except Exception:
@@ -184,7 +188,7 @@ def run_launcher():
     # NEW GAME SCREEN WIDGETS
     input_newgame_name = InputBox(500, 300, 400, 50)
     input_newgame_pass = InputBox(500, 420, 400, 50, is_password=True)
-    input_newgame_players = InputBox(600, 540, 200, 50)  # Smaller box for numbers
+    # input_newgame_players = InputBox(600, 540, 200, 50)  # Smaller box for numbers
     btn_create_confirm = Button(600, 650, 200, 50, "Create a new game", action_create)
 
     # LOAD GAME SCREEN WIDGETS
@@ -227,7 +231,8 @@ def run_launcher():
                 elif current_state == "NEW_GAME":
                     input_newgame_name.handle_event(event)
                     input_newgame_pass.handle_event(event)
-                    input_newgame_players.handle_event(event)
+                    # input_newgame_players.handle_event(event)
+                    nbr_player=4
                     btn_create_confirm.handle_event(event)
 
                 elif current_state == "LOAD_GAME":
@@ -251,8 +256,8 @@ def run_launcher():
                 draw_text_centered("Please give your game a password :", FONT_LABEL, 390)
                 input_newgame_pass.draw(screen)
 
-                draw_text_centered("How many players will compete ?", FONT_LABEL, 510)
-                input_newgame_players.draw(screen)
+                #draw_text_centered("How many players will compete ?", FONT_LABEL, 510)
+                #input_newgame_players.draw(screen)
 
                 btn_create_confirm.draw(screen)
 

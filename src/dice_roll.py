@@ -35,4 +35,3 @@ class Dice:
         text = font.render(str(self.current_display), True, (255,255,255))
         screen.blit(text, (x,y))
 
-
