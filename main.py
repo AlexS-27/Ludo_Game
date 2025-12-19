@@ -208,7 +208,7 @@ while run:
                     f"{game.players[game.current_player_index].name} rolled {game.rolled_dice}: No moves possible!")
 
             # wait 2 seconds
-            if pygame.time.get_ticks() - skip_timer > 2000:
+            if pygame.time.get_ticks() - skip_timer > 1500:
                 game.next_player()
                 dice.result = None
                 skip_timer = 0
