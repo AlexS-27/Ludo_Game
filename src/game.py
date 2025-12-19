@@ -12,7 +12,7 @@ PLAYER_START_POSITIONS = {
 }
 
 ROLL_TO_RELEASE = 5
-MAX_COMMON_PATH = 56  # Le nombre total de cases sur l'anneau extérieur
+MAX_COMMON_PATH = 52  # Le nombre total de cases sur l'anneau extérieur
 
 
 class Game:

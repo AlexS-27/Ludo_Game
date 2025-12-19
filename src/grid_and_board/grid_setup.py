@@ -67,7 +67,7 @@ def setup_home_and_storage(grid, colors):
 
 
 def setup_game_path(grid):
-    # Chemin jouable (indexation 1 → 56)
+    # Chemin jouable (indexation 1 → 52)
     game_id_counter = 1
 
     # Chemin horizontal en haut
@@ -171,4 +171,4 @@ def setup_game_path(grid):
         grid[7][c].id = safe_id
         safe_id += 1
 
-    return game_id_counter - 1  # Retourne la longueur du chemin (56)
+    return game_id_counter - 1  # Retourne la longueur du chemin (52)
