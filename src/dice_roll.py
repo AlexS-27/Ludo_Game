@@ -1,3 +1,4 @@
+# src/dice_roll.py
 import random
 import pygame
 import time
@@ -17,6 +18,8 @@ class Dice:
         self.animating = True
         self.animating_start = time.time()
         self.result = None
+        # Le premier chiffre affiché immédiatement pour ne pas avoir de case vide
+        self.current_display = random.randint(1,6) 
 
     def update(self):
         if self.animating:
@@ -31,8 +34,7 @@ class Dice:
                 self.current_display = self.result
                 self.animating = False
 
-    def draw(self, screen, font, x=0, y=0):
-        text = font.render(str(self.current_display), True, (255,255,255))
-        screen.blit(text, (x,y))
-
-
+    def draw(self, screen, font):
+        # Cette méthode n'est plus utilisée directement dans la nouvelle UI de main.py
+        # Le dé est affiché dans draw_sidebar
+        pass
