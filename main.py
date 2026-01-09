@@ -1,0 +1,370 @@
+"""
+Ludo Game - Main Application Entry Point
+Description: Handles the Pygame initialization, UI rendering, game loop, and event processing.
+Authors: Alexandre Ramirez, Kilian Testard, Niels Delafontaine et Alex Kamano with help of IA
+Date: 2025
+"""
+
+import pygame
+import sys
+import math
+from src.grid_and_board.cell import (
+    RED, GREEN, BLUE, YELLOW, WHITE, BLACK, STORAGE
+)
+from src.grid_and_board.board import color_ludo
+from src.grid_and_board.arrows import draw_entry_arrows
+from src.grid_and_board.grid_setup import create_grid, setup_home_and_storage, setup_game_path
+from src.dice_roll import Dice
+from src.linkwithdatabase import get_connection
+from src.login import run_launcher
+from src.game import Game
+from src.player import Player
+
+# --- Database Setup ---
+DB_PATH = "./docs/Database/ludo.db"
+conn = get_connection(DB_PATH)
+cursor = conn.cursor()
+
+# --- Pygame Initialization ---
+pygame.init()
+pygame.font.init()
+
+# --- Login Loop ---
+# Launch the login screen before opening the main game window
+connected = run_launcher()
+if not connected:
+    pygame.quit()
+    sys.exit()
+
+# --- Screen Configuration ---
+screen = pygame.display.set_mode((1400, 900), pygame.RESIZABLE)
+pygame.display.set_caption("Ludo Game")
+
+# --- Grid & Board Configuration ---
+ROWS, COLS = 15, 15
+CELL_WIDTH, CELL_HEIGHT = 50, 50
+COLORS = {"RED": RED, "BLUE": BLUE, "YELLOW": YELLOW, "GREEN": GREEN}
+COLOR_MAP = {"red": RED, "blue": BLUE, "yellow": YELLOW, "green": GREEN}
+
+# Initialize the game board grid
+grid = create_grid(ROWS, COLS, CELL_WIDTH, CELL_HEIGHT)
+color_ludo(grid)
+storage_cells = setup_home_and_storage(grid, COLORS)
+game_path_length = setup_game_path(grid)
+
+# --- Game Logic Initialization ---
+players = [
+    Player("Player 1", 1),
+    Player("Player 2", 2),
+    Player("Player 3", 3),
+    Player("Player 4", 4)
+]
+game = Game(players, grid, game_path_length)
+game_history = ["Game started!"]
+dice = Dice()
+
+# --- Font Resources ---
+font_dice = pygame.font.Font(None, 120)  # Large font for dice numerical fallback
+font_ui = pygame.font.SysFont("Segoe UI", 16)
+
+# --- UI Layout Constants ---
+SIDEBAR_W = 300
+HEADER_H = 64
+BOARD_LEFT = 40
+BOARD_TOP = HEADER_H + 20
+clock = pygame.time.Clock()
+FPS = 60
+
+
+# --- Drawing Functions ---
+
+def draw_gradient_background(surface):
+    """Renders a vertical gradient background for the application."""
+    h = surface.get_height()
+    top_color, bottom_color = (30, 30, 40), (12, 12, 20)
+    for i in range(h):
+        t = i / h
+        r = int(top_color[0] * (1 - t) + bottom_color[0] * t)
+        g = int(top_color[1] * (1 - t) + bottom_color[1] * t)
+        b = int(top_color[2] * (1 - t) + bottom_color[2] * t)
+        pygame.draw.line(surface, (r, g, b), (0, i), (surface.get_width(), i))
+
+
+def draw_header(surface):
+    """Renders the top navigation/title bar."""
+    header_rect = pygame.Rect(0, 0, surface.get_width(), HEADER_H)
+    pygame.draw.rect(surface, (20, 20, 30), header_rect)
+    title_font = pygame.font.SysFont("Segoe UI", 24, bold=True)
+    text = title_font.render("Ludo Game", True, WHITE)
+    surface.blit(text, (20, HEADER_H // 2 - text.get_height() // 2))
+
+
+def draw_sidebar(surface):
+    """Renders the sidebar containing player info, leaderboard, and game logs."""
+    w = SIDEBAR_W
+    rect = pygame.Rect(surface.get_width() - w, HEADER_H, w, surface.get_height() - HEADER_H)
+    pygame.draw.rect(surface, (14, 14, 18), rect, border_radius=12)
+    inner = rect.inflate(-18, -18)
+    pygame.draw.rect(surface, (22, 22, 26), inner, border_radius=10)
+
+    # Active Player Information
+    curr_p = game.players[game.current_player_index]
+    title_font = pygame.font.SysFont("Segoe UI", 18, bold=True)
+    p_text = title_font.render(f"Turn: {curr_p.name}", True, WHITE)
+    surface.blit(p_text, (inner.left + 12, inner.top + 20))
+
+    # Active color indicator
+    color_rect = pygame.Rect(inner.left + 12, inner.top + 50, 60, 8)
+    pygame.draw.rect(surface, COLOR_MAP.get(curr_p.color), color_rect, border_radius=4)
+
+    # Leaderboard (Sorted by score)
+    score_y_start = inner.top + 80
+    lbl_score = font_ui.render("LEADERBOARD:", True, (150, 150, 150))
+    surface.blit(lbl_score, (inner.left + 12, score_y_start))
+
+    sorted_players = sorted(game.players, key=lambda p: p.score, reverse=True)
+    for i, p in enumerate(sorted_players):
+        y_offset = score_y_start + 30 + (i * 30)
+        pygame.draw.circle(surface, COLOR_MAP[p.color], (inner.left + 20, y_offset + 10), 6)
+        p_color = WHITE if p != curr_p else (255, 255, 150)
+        txt_score = font_ui.render(f"{p.name}: {p.score} pts", True, p_color)
+        surface.blit(txt_score, (inner.left + 35, y_offset))
+
+    # Dice Roll Button
+    btn = pygame.Rect(inner.left + 12, inner.top + 230, inner.width - 24, 45)
+    is_rollable = game.rolled_dice is None and not turn_transition
+    btn_color = (200, 200, 200) if is_rollable else (100, 100, 100)
+    pygame.draw.rect(surface, btn_color, btn, border_radius=8)
+
+    btn_label = "ROLL DICE" if not dice.animating else "ROLLING..."
+    txt_btn = font_ui.render(btn_label, True, BLACK)
+    surface.blit(txt_btn, (btn.centerx - txt_btn.get_width() // 2, btn.centery - txt_btn.get_height() // 2))
+
+    # Status Message (Directly below dice area)
+    status_y = btn.bottom + 170
+    msg_color = (255, 100, 100) if "No moves" in game.message else (200, 200, 100)
+    msg_wrapped = font_ui.render(game.message, True, msg_color)
+    surface.blit(msg_wrapped, (inner.left + 12, status_y))
+
+    # Activity Log (Recent history)
+    hist_y = inner.top + 520
+    lbl_hist = font_ui.render("RECENT ACTIVITY:", True, (150, 150, 150))
+    surface.blit(lbl_hist, (inner.left + 12, hist_y))
+
+    for i, msg in enumerate(game_history[-5:]):
+        msg_txt = font_ui.render(f"> {msg}", True, (180, 180, 180))
+        surface.blit(msg_txt, (inner.left + 12, hist_y + 30 + (i * 22)))
+
+    return btn
+
+
+def draw_dice_face(surface, x, y, value):
+    """Renders a visual 3D-style dice face with dots based on the rolled value."""
+    rect = pygame.Rect(x, y, 80, 80)
+    pygame.draw.rect(surface, WHITE, rect, border_radius=12)
+    pygame.draw.rect(surface, (50, 50, 50), rect, 2, border_radius=12)
+
+    # Dot coordinates relative to dice (x, y)
+    dot_pos = {
+        1: [(40, 40)],
+        2: [(20, 20), (60, 60)],
+        3: [(20, 20), (40, 40), (60, 60)],
+        4: [(20, 20), (20, 60), (60, 20), (60, 60)],
+        5: [(20, 20), (20, 60), (40, 40), (60, 20), (60, 60)],
+        6: [(20, 40), (60, 40), (20, 20), (20, 60), (60, 20), (60, 60)]
+    }
+
+    for (dx, dy) in dot_pos.get(value, []):
+        pygame.draw.circle(surface, (30, 30, 30), (x + dx, y + dy), 8)
+
+
+def draw_pawns(surface, grid, offset_x, offset_y, cell_w, cell_h):
+    """Renders all player pawns with highlighting for available moves."""
+    pawn_radius = cell_w // 3
+    curr_player = game.players[game.current_player_index]
+
+    for player in game.players:
+        for pawn in player.pawns:
+            if pawn.is_finished:
+                continue
+
+            cx, cy = None, None
+
+            # Determine pawn pixel coordinates
+            if pawn.position is not None:
+                cell_info = game.get_cell_by_position(pawn.position)
+                if cell_info:
+                    cx = offset_x + cell_info['col'] * cell_w + cell_w // 2
+                    cy = offset_y + cell_info['row'] * cell_h + cell_h // 2
+            else:
+                s_info = storage_cells.get((player.color, pawn.pawn_id))
+                if s_info:
+                    cx = offset_x + s_info['col'] * cell_w + cell_w // 2
+                    cy = offset_y + s_info['row'] * cell_h + cell_h // 2
+
+            if cx is None or cy is None:
+                continue
+
+            # Move Highlight Logic (Pulsing glow)
+            if game.rolled_dice is not None and player == curr_player:
+                is_playable = False
+                if pawn.position is None and game.rolled_dice == 5:
+                    is_playable = True
+                elif pawn.position is not None:
+                    is_playable = True
+
+                if is_playable:
+                    pulse = (math.sin(pygame.time.get_ticks() * 0.01) + 1) / 2
+                    pygame.draw.circle(surface, (40, 40, 40), (cx, cy), pawn_radius + 4 * pulse, 3)
+
+            # Draw pawn body
+            color = COLOR_MAP[player.color]
+            pygame.draw.circle(surface, color, (cx, cy), pawn_radius)
+            pygame.draw.circle(surface, BLACK, (cx, cy), pawn_radius, 2)
+
+
+def world_to_cell(mx, my, left, top, cw, ch):
+    """Converts mouse screen coordinates to grid row and column indices."""
+    col = (mx - left) // cw
+    row = (my - top) // ch
+    return int(row), int(col)
+
+
+def start_turn_transition():
+    """Triggers the delay sequence between player turns."""
+    global turn_transition, turn_transition_start
+    turn_transition = True
+    turn_transition_start = pygame.time.get_ticks()
+
+
+# ================= MAIN GAME LOOP =================
+run = True
+roll_button_rect = pygame.Rect(0, 0, 0, 0)
+turn_transition = False
+turn_transition_start = 0
+TURN_DELAY = 1500
+
+while run:
+    mx, my = pygame.mouse.get_pos()
+
+    # Event Handling
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+
+        if turn_transition:
+            continue
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            # Handle dice button click
+            if roll_button_rect.collidepoint(mx, my):
+                if not dice.animating and game.rolled_dice is None:
+                    dice.start_animation()
+
+            # Handle grid/board clicks
+            r, c = world_to_cell(mx, my, BOARD_LEFT, BOARD_TOP, CELL_WIDTH, CELL_HEIGHT)
+            if 0 <= r < ROWS and 0 <= c < COLS:
+                if game.rolled_dice is not None and not dice.animating:
+                    player = game.players[game.current_player_index]
+                    cell = grid[r][c]
+                    moved = False
+
+                    # Try to release pawn from storage
+                    if cell.cell_type == STORAGE:
+                        pawn_to_release = next((p for p in player.pawns if
+                                                p.position is None and storage_cells.get((player.color, p.pawn_id))[
+                                                    'row'] == r),
+                                               None)
+                        if pawn_to_release:
+                            if game.try_to_release_pawn(pawn_to_release, game.rolled_dice):
+                                start_turn_transition()
+                                moved = True
+                            else:
+                                game.set_message("Start cell is blocked!")
+
+                    # Try to move pawn already on the path
+                    elif cell.id is not None:
+                        pawns_on_cell = game.get_pawns_on_cell(r, c)
+                        pawn = next((p for p in pawns_on_cell if p.player == player), None)
+                        if pawn and game.try_to_move_pawn(pawn, game.rolled_dice):
+                            game.set_message(f"Moved to position {pawn.position}.")
+                            start_turn_transition()
+                            moved = True
+
+    # State Updates
+    dice.update()
+
+    # Finalize dice roll once animation completes
+    if not dice.animating and dice.result is not None:
+        game.rolled_dice = dice.result
+        dice.result = None
+
+        if not game.can_player_move(game.rolled_dice):
+            game.set_message(
+                f"{game.players[game.current_player_index].name} rolled {game.rolled_dice}: No moves possible!")
+            start_turn_transition()
+        else:
+            game.set_message(f"Rolled a {game.rolled_dice}! Select a pawn to move.")
+
+    # Handle automatic turn switching after delay
+    if turn_transition:
+        if pygame.time.get_ticks() - turn_transition_start > TURN_DELAY:
+            game.post_move_cleanup()
+            turn_transition = False
+
+    # Log significant game messages to history
+    if game.message and (not game_history or game.message != game_history[-1]):
+        if "turn" not in game.message and "Select" not in game.message:
+            game_history.append(game.message)
+
+    # Rendering
+    draw_gradient_background(screen)
+    draw_header(screen)
+    roll_button_rect = draw_sidebar(screen)
+
+    # Draw board container
+    board_w, board_h = COLS * CELL_WIDTH, ROWS * CELL_HEIGHT
+    pygame.draw.rect(screen, (30, 30, 36), (BOARD_LEFT - 5, BOARD_TOP - 5, board_w + 10, board_h + 10),
+                     border_radius=10)
+
+    # Draw individual grid cells
+    for row_cells in grid:
+        for cell in row_cells:
+            cell.draw(screen, BOARD_LEFT, BOARD_TOP)
+
+    # Draw directional arrows for entry paths
+    draw_entry_arrows(screen, 0, 0, 3, 0, 0, None, CELL_WIDTH, CELL_HEIGHT, "", BOARD_LEFT, BOARD_TOP)
+
+    # Mouse hover highlight on grid
+    hr, hc = world_to_cell(mx, my, BOARD_LEFT, BOARD_TOP, CELL_WIDTH, CELL_HEIGHT)
+    if 0 <= hr < ROWS and 0 <= hc < COLS:
+        pygame.draw.rect(screen, (255, 255, 255),
+                         (BOARD_LEFT + hc * CELL_WIDTH, BOARD_TOP + hr * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT), 2)
+
+    # Preview potential movement (Phantom pawn)
+    if game.rolled_dice is not None:
+        pawns_under_mouse = game.get_pawns_on_cell(hr, hc)
+        for p in pawns_under_mouse:
+            if p.player == game.players[game.current_player_index]:
+                future_pos_id = p.position + game.rolled_dice
+                future_cell = game.get_cell_by_position(future_pos_id)
+                if future_cell:
+                    fx = BOARD_LEFT + future_cell['col'] * CELL_WIDTH
+                    fy = BOARD_TOP + future_cell['row'] * CELL_HEIGHT
+                    s = pygame.Surface((CELL_WIDTH, CELL_HEIGHT), pygame.SRCALPHA)
+                    p_color = COLOR_MAP[game.players[game.current_player_index].color]
+                    dark_version = (p_color[0] // 2, p_color[1] // 2, p_color[2] // 2, 100)
+                    s.fill(dark_version)
+                    screen.blit(s, (fx, fy))
+
+    draw_pawns(screen, grid, BOARD_LEFT, BOARD_TOP, CELL_WIDTH, CELL_HEIGHT)
+
+    # Render physical dice face in the sidebar
+    dice_x = roll_button_rect.centerx - 40
+    dice_y = roll_button_rect.bottom + 50
+    draw_dice_face(screen, dice_x, dice_y, dice.current_display)
+
+    pygame.display.flip()
+    clock.tick(FPS)
+
+pygame.quit()
